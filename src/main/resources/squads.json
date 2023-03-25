@@ -1,0 +1,18 @@
+[
+  {
+    "squadName": "first",
+    "squadContent": {
+      "BUILDER": 123,
+      "MINER": 456
+    },
+    "totalWeight": 0
+  },
+  {
+    "squadName": "second",
+    "squadContent": {
+      "BUILDER": 798,
+      "MINER": 7897
+    },
+    "totalWeight": 0
+  }
+]

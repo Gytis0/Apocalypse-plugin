@@ -1,0 +1,102 @@
+name: Apocalypse
+version: '${project.version}'
+main: apocalypse.apocalypse.Apocalypse
+api-version: 1.19
+commands:
+  #Base controls
+  toggleApocalypse:
+    description: Toggles apocalypse on or off.
+    usage: /toggleapocalypse [true / false]
+    aliases: [ ta ]
+
+  resetMods:
+    description: Reset all player modifications that were made during the apocalypse.
+    usage: /resetmods {@a / player names}
+    aliases: [ resetm ]
+
+  #Difficulty settings
+  setDifficultySetting:
+    description: Changes difficulty's setting. Set to null, if no changes for that property is needed.
+    usage: /setdiffsetting [setting] {base / 0} {linear / 0} {scale / 0}
+    aliases: [ setdiff ]
+
+  saveApocalypseSettings:
+      description: Save current apocalypse settings to config files.
+      usage: /saveapocalypsesettings
+      aliases: [ save ]
+
+  #Horde settings
+  setZombieType:
+    description: Set properties for zombie type.
+    usage: /setzombietype [type] [weight / 0] {lvlRequirement}
+    aliases: [ settype ]
+
+  createSquad:
+    description: Create a squad.
+    usage: /createsquad [squadName]
+    aliases: [ cs ]
+
+  setSquad:
+    description: Add, change or remove zombies from squads. Change amount to non-positive to remove a zombie type.
+    usage: /setsquad [squadName] [zombieType] [amount]
+    aliases: [ ss ]
+
+  removeSquad:
+    description: Remove a squad.
+    usage: /removesquad [squadName]
+    aliases: [ rs ]
+
+  #Printing
+  printHelp:
+    description: Prints help for the apocalypse plugin.
+    usage: /apocalypsehelp
+    aliases: [aphelp, printaphelp]
+
+  printDifficultySettings:
+    description: Prints base apocalypse difficulty settings.
+    usage: /difficultysettings
+    aliases: [diffsets, dsets, diff]
+
+  printCurrentSettings:
+    description: Prints current on-going apocalypse scaled difficulty settings.
+    usage: /currentsettings
+    aliases: [cdiffsets, cdsets]
+
+  printActiveZombies:
+    description: Prints how many active zombies there are.
+    usage: /printactivezombies
+    aliases: [paz]
+
+  printLevelSpawnPercentages:
+    description: Prints a table of level spawn chances.
+    usage: /printlevelspawnpercentages
+    aliases: [plsp, printchances]
+
+  printZombieTypes:
+    description: Prints a table of zombie types and their properties.
+    usage: /printzombietypes
+    aliases: [pzt, printtypes]
+
+  printSquads:
+    description: Prints a table of created squads.
+    usage: /printsquads
+    aliases: [ps]
+
+  printMyVector:
+    description: Prints your facing of vector
+    usage: /printmyvector
+    aliases: [pmv]
+
+  #Utility
+  spawnSquad:
+    description: Spawns a squad on top of a player. Used for testing purposes.
+    usage: /spawnsquad [squadName] [level]
+
+  despawnZombies:
+    description: Despawns all active zombies.
+    usage: /despawnzombies
+
+  # Debugging
+  placeBlockAtLedge:
+    description: Places a glass block at a calculated ledge. Used for debugging purposes.
+    usage: /placeblockatledge

@@ -21,7 +21,6 @@ import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class BlockMining extends CustomPathSearch implements Skill {
     Zombie zombie;
@@ -47,7 +46,7 @@ public class BlockMining extends CustomPathSearch implements Skill {
 
     int breakingTaskId, breakTaskId;
 
-    public BlockMining(Zombie zombie, Pathfinder pathfinder, World world, List<ItemStack> inventory, int activeInventorySlot){
+    public BlockMining(Zombie zombie, Pathfinder pathfinder, World world, List<ItemStack> inventory, int activeInventorySlot) {
         super(world);
         this.zombie = zombie;
         this.pathfinder = pathfinder;
@@ -69,64 +68,54 @@ public class BlockMining extends CustomPathSearch implements Skill {
     }
 
     // Public
-    public void mineStraightTo(LivingEntity target){
+    public void mineStraightTo(LivingEntity target) {
         Block topBlock, botBlock;
 
         topBlock = findBlockBetween(zombie, target, world, true);
         botBlock = findBlockBetween(zombie, target, world, false);
 
-        if(topBlock != null){
+        if (topBlock != null) {
             blocksToBreak.add(topBlock);
         }
-        if(botBlock != null){
+        if (botBlock != null) {
             blocksToBreak.add(botBlock);
         }
 
-        if(topBlock == null && botBlock == null){
+        if (topBlock == null && botBlock == null) {
             mineUpTo(target);
         }
     }
 
-    public void mineUpTo(LivingEntity target){
-        if(firstGrade){
+    public void mineUpTo(LivingEntity target) {
+        if (firstGrade) {
             mineUpToFirstGrade(target);
-        }
-        else if(!firstGrade){
+        } else if (!firstGrade) {
             mineUpToSecondGrade(target);
         }
     }
 
-    protected void mineUpToFirstGrade(LivingEntity target){
+    protected void mineUpToFirstGrade(LivingEntity target) {
         double xDifference = Math.abs(zombie.getLocation().getX() - target.getLocation().getX());
         double yDifference = Math.abs(zombie.getLocation().getZ() - target.getLocation().getZ());
         double difference = xDifference + yDifference;
 
         // if difference is less than 1.41, we consider the target to be right above the zombie
-        if(difference < 1.41){
+        if (difference < 1.41) {
             // Broadcast, that this skill can't reach the zombie
             blocksToBreak.add(getTopBlock(target));
-        }
-        else{
-            Optional<List<Block>> optionalCustomPath = getCustomPathTopBlocks(zombie, target);
-            Block obstacle;
-            if(optionalCustomPath.isPresent()){
-                 obstacle = getFirstObstacleOf(optionalCustomPath.get());
-            }
-            else{
-                return;
-            }
+        } else {
+            List<Block> optionalCustomPath = getCustomPathTopBlocks(zombie, target);
+            Block obstacle = getFirstObstacleOf(optionalCustomPath);
 
-
-            if(obstacle != null && isBlockReachable(zombie, obstacle, mineRange)){
+            if (obstacle != null && isBlockReachable(zombie, obstacle, mineRange)) {
                 blocksToBreak.add(obstacle);
 
                 Block blockInFrontOfObstacle = findBlockBefore(obstacle, zombie);
 
-                if(blockInFrontOfObstacle.getType() != Material.AIR){
+                if (blockInFrontOfObstacle.getType() != Material.AIR) {
                     blocksToBreak.add(blockInFrontOfObstacle);
                 }
-            }
-            else{
+            } else {
                 // Broadcast that miners can't find a way to mine straight up
                 // Enable second grade
                 firstGrade = false;
@@ -135,16 +124,15 @@ public class BlockMining extends CustomPathSearch implements Skill {
         }
     }
 
-    protected void mineUpToSecondGrade(LivingEntity target){
+    protected void mineUpToSecondGrade(LivingEntity target) {
         Bukkit.getLogger().info("Using new algo");
 
-        if(nextPathBlock != null){
-            if(!getTopBlock(zombie).equals(nextPathBlock)){
+        if (nextPathBlock != null) {
+            if (!getTopBlock(zombie).equals(nextPathBlock)) {
                 Bukkit.getLogger().info("I'm still not on my next path block. " + nextPathBlock.getLocation());
                 Bukkit.getLogger().info("I'm on " + getTopBlock(zombie).getLocation());
                 return;
-            }
-            else{
+            } else {
                 removeNextPathBlock();
                 Bukkit.getLogger().info("I reached my next path block, continuing");
             }
@@ -155,7 +143,7 @@ public class BlockMining extends CustomPathSearch implements Skill {
         double difference = xDifference + yDifference;
 
         // if difference is less than 1.41, we consider the target to be right above the zombie
-        if(difference < 1.41 && getTopBlock(target).getLocation().distance(zombie.getLocation()) <= mineRange){
+        if (difference < 1.41 && getTopBlock(target).getLocation().distance(zombie.getLocation()) <= mineRange) {
             blocksToBreak.add(getTopBlock(target));
             return;
         }
@@ -163,17 +151,17 @@ public class BlockMining extends CustomPathSearch implements Skill {
         List<Block> blocksAround = new ArrayList<>();
         RayTraceResult result;
         Bukkit.getLogger().info("Ray casting...");
-        for(BlockFace direction : directions){
+        for (BlockFace direction : directions) {
             result = world.rayTraceBlocks(zombie.getEyeLocation(), direction.getDirection(), wallSearchRange);
-            if(result != null){
-                if(result.getHitBlock().getRelative(BlockFace.DOWN).getType() != Material.AIR &&
-                        result.getHitBlock().getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).getRelative(direction.getOppositeFace()).getType() != Material.AIR){
+            if (result != null) {
+                if (result.getHitBlock().getRelative(BlockFace.DOWN).getType() != Material.AIR &&
+                        result.getHitBlock().getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN).getRelative(direction.getOppositeFace()).getType() != Material.AIR) {
                     blocksAround.add(result.getHitBlock());
                 }
             }
         }
 
-        if(blocksAround.size() == 0){
+        if (blocksAround.size() == 0) {
             //Make the zombie walk around a bit to find the closest wall
             Bukkit.getLogger().warning("Zombie cannot find any walls to mine up to the player");
             return;
@@ -181,36 +169,35 @@ public class BlockMining extends CustomPathSearch implements Skill {
 
         double closestDistance = -1, tempDistance;
         Block closestBlock = blocksAround.get(0);
-        for(Block block : blocksAround){
+        for (Block block : blocksAround) {
             tempDistance = block.getLocation().distance(target.getLocation());
-            if(closestDistance == -1){
+            if (closestDistance == -1) {
                 closestDistance = tempDistance;
                 closestBlock = block;
-            }
-            else if(closestDistance > tempDistance){
+            } else if (closestDistance > tempDistance) {
                 closestDistance = tempDistance;
                 closestBlock = block;
             }
         }
 
         blocksToBreak.add(closestBlock);
-        if(closestBlock.getRelative(BlockFace.UP).getType() != Material.AIR){
+        if (closestBlock.getRelative(BlockFace.UP).getType() != Material.AIR) {
             blocksToBreak.add(closestBlock.getRelative(BlockFace.UP));
         }
-        if(closestBlock.getRelative(BlockFace.UP).getRelative(BlockFace.UP).getType() != Material.AIR){
+        if (closestBlock.getRelative(BlockFace.UP).getRelative(BlockFace.UP).getType() != Material.AIR) {
             blocksToBreak.add(closestBlock.getRelative(BlockFace.UP).getRelative(BlockFace.UP));
         }
 
         nextPathBlock = closestBlock.getRelative(BlockFace.DOWN);
     }
 
-    public void mineDownTo(LivingEntity target){
+    public void mineDownTo(LivingEntity target) {
         double xDifference = Math.abs(zombie.getLocation().getX() - target.getLocation().getX());
         double yDifference = Math.abs(zombie.getLocation().getZ() - target.getLocation().getZ());
         double difference = xDifference + yDifference;
 
         // if difference is less than 1.41, we consider the target to be right below the zombie
-        if(difference < 1.41){
+        if (difference < 1.41) {
             blocksToBreak.add(getTopBlock(zombie));
             return;
         }
@@ -222,30 +209,30 @@ public class BlockMining extends CustomPathSearch implements Skill {
         Block midBlock = findBlockBetween(zombie, tempTargetLocation, world, false);
         Block botBlock = null;
 
-        if(midBlock != null){
+        if (midBlock != null) {
             blocksToBreak.add(midBlock);
 
             botBlock = midBlock.getRelative(BlockFace.DOWN);
             blocksToBreak.add(botBlock);
         }
-        if(topBlock != null){
+        if (topBlock != null) {
             blocksToBreak.add(topBlock);
 
-            if(botBlock == null){
+            if (botBlock == null) {
                 botBlock = topBlock.getRelative(BlockFace.DOWN).getRelative(BlockFace.DOWN);
                 blocksToBreak.add(botBlock);
             }
         }
     }
 
-    public boolean isBreaking(){
+    public boolean isBreaking() {
         return breaking;
     }
 
     // find a block that's between two entities' with a range
-    protected Block findBlockBetween(LivingEntity origin, LivingEntity target, World world, boolean eyeLevel){
+    protected Block findBlockBetween(LivingEntity origin, LivingEntity target, World world, boolean eyeLevel) {
         double yOffset = 1.5;
-        if(eyeLevel){
+        if (eyeLevel) {
             yOffset += 1.1;
         }
 
@@ -258,21 +245,19 @@ public class BlockMining extends CustomPathSearch implements Skill {
         RayTraceResult result = world.rayTraceBlocks(originLoc, direction, Utils.clamp((int) distance, 0, range));
 
 
-
-        if(result != null){
-            if(result.getHitEntity() != null){
+        if (result != null) {
+            if (result.getHitEntity() != null) {
                 Bukkit.getLogger().info("I hit " + result.getHitEntity());
             }
             return result.getHitBlock();
-        }
-        else{
+        } else {
             return null;
         }
     }
 
-    protected Block findBlockBetween(LivingEntity origin, Location targetLoc, World world, boolean eyeLevel){
+    protected Block findBlockBetween(LivingEntity origin, Location targetLoc, World world, boolean eyeLevel) {
         double yOffset = 1.5;
-        if(eyeLevel){
+        if (eyeLevel) {
             yOffset += 1.1;
         }
 
@@ -284,13 +269,12 @@ public class BlockMining extends CustomPathSearch implements Skill {
         int range = 4;
         RayTraceResult result = world.rayTraceBlocks(originLoc, direction, Utils.clamp((int) distance, 0, range));
 
-        if(result != null){
+        if (result != null) {
             return result.getHitBlock();
-        }
-        else return null;
+        } else return null;
     }
 
-    protected void startBreakingBlock(ItemStack tool){
+    protected void startBreakingBlock(ItemStack tool) {
         breaking = true;
         float speed = GameUtils.getBlockDestroySpeed(focusBlock, tool);
         zombie.addPotionEffect(standStill);
@@ -301,10 +285,12 @@ public class BlockMining extends CustomPathSearch implements Skill {
             world.playSound(focusBlock.getLocation(), focusBlock.getBlockSoundGroup().getHitSound(), 1, 1);
         }, 0, 1).getId();
 
-        breakTaskId = new DelayedTask(() -> {destroyBlock(focusBlock, tool);}, speed).getId();
+        breakTaskId = new DelayedTask(() -> {
+            destroyBlock(focusBlock, tool);
+        }, speed).getId();
     }
 
-    protected void stopBreakingBlocks(){
+    protected void stopBreakingBlocks() {
         breaking = false;
         firstGrade = true;
         zombie.removePotionEffect(PotionEffectType.SLOW);
@@ -314,14 +300,13 @@ public class BlockMining extends CustomPathSearch implements Skill {
         lastDistanceToFocusBlock = -1;
     }
 
-    protected void destroyBlock(Block block, ItemStack tool){
+    protected void destroyBlock(Block block, ItemStack tool) {
         focusBlock = null;
         breaking = false;
 
-        if(tool != null && block.isValidTool(tool)){
+        if (tool != null && block.isValidTool(tool)) {
             block.breakNaturally(tool);
-        }
-        else{
+        } else {
             block.setType(Material.AIR);
         }
 
@@ -334,7 +319,7 @@ public class BlockMining extends CustomPathSearch implements Skill {
         firstGrade = true;
     }
 
-    protected Block findBlockBefore(Block block, LivingEntity entity){
+    protected Block findBlockBefore(Block block, LivingEntity entity) {
         Location blockFacing = block.getLocation();
         Vector direction = zombie.getLocation().clone().subtract(blockFacing).toVector();
 
@@ -343,49 +328,46 @@ public class BlockMining extends CustomPathSearch implements Skill {
         return block.getRelative(Utils.getFacingByYaw(blockFacing.getYaw()));
     }
 
-    protected boolean isBlockReachable(Zombie zombie, Block block, double range){
+    protected boolean isBlockReachable(Zombie zombie, Block block, double range) {
         Location closestLocation = zombie.getPathfinder().findPath(block.getLocation()).getFinalPoint();
 
-        if(closestLocation != null){
-            if(closestLocation.distance(block.getLocation()) <= range){
+        if (closestLocation != null) {
+            if (closestLocation.distance(block.getLocation()) <= range) {
                 return true;
-            }
-            else return false;
+            } else return false;
         }
         Bukkit.getLogger().warning("Could not predict if the block is reachable");
         return false;
     }
 
-    public Block getNextPathBlock(){
+    public Block getNextPathBlock() {
         return nextPathBlock;
     }
 
-    public void removeNextPathBlock(){
+    public void removeNextPathBlock() {
         nextPathBlock = null;
     }
 
     @Override
     public boolean trigger() {
-        if(blocksToBreak.size() > 0){
+        if (blocksToBreak.size() > 0) {
             focusBlock = blocksToBreak.get(0);
 
             return true;
-        }
-        else return false;
+        } else return false;
     }
 
     @Override
     public void action() {
         Location focusBlockLocation = focusBlock.getLocation();
-        if(zombie.getLocation().distance(focusBlockLocation) > mineRange){
-            if(lastDistanceToFocusBlock != -1){
-                if(lastDistanceToFocusBlock - focusBlockLocation.distance(zombie.getLocation()) < 0.5f){
+        if (zombie.getLocation().distance(focusBlockLocation) > mineRange) {
+            if (lastDistanceToFocusBlock != -1) {
+                if (lastDistanceToFocusBlock - focusBlockLocation.distance(zombie.getLocation()) < 0.5f) {
                     stopBreakingBlocks();
-                    if(firstGrade){
+                    if (firstGrade) {
                         // Can't reach the block with first algo, change to second one
                         firstGrade = false;
-                    }
-                    else if(!firstGrade){
+                    } else if (!firstGrade) {
                         // Broadcast that this skill cannot reach the blocks to mine
                         Bukkit.getLogger().warning("Zombie could not find any way to reach the player.");
                     }
@@ -401,7 +383,7 @@ public class BlockMining extends CustomPathSearch implements Skill {
             return;
         }
 
-        if(!breaking){
+        if (!breaking) {
             startBreakingBlock(inventory.get(activeInventorySlot));
         }
 

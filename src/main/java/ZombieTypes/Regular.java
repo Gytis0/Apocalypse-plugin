@@ -1,9 +1,9 @@
 package ZombieTypes;
 
 import Enums.ZombieTypes;
-import Model.Goal;
 import Utility.RepeatableTask;
 import com.destroystokyo.paper.entity.Pathfinder;
+import logic.GoalManager;
 import logic.Stats;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -15,9 +15,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 
 public class Regular implements Listener {
     protected RepeatableTask updateTask;
@@ -28,7 +26,7 @@ public class Regular implements Listener {
 
     // AI
     protected Pathfinder pathfinder;
-    protected Queue<Goal> goals;
+    protected GoalManager goalManager;
 
     List<ItemStack> inventory;
     int activeInventorySlot = 0;
@@ -46,7 +44,7 @@ public class Regular implements Listener {
         spawnZombie(tempLoc, target);
         world = Bukkit.getWorld("world");
         inventory = new ArrayList<>();
-        goals = new LinkedList<>();
+        goalManager = new GoalManager();
     }
 
     protected void update() {

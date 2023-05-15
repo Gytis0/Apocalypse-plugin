@@ -40,7 +40,7 @@ public class GoalReachTarget extends Goal {
 
     @Override
     public void run() {
-        Bukkit.getLogger().info("FUNCTION goal is in action");
+        Bukkit.getLogger().info("REACHTARGET goal is in action");
         reachTarget.run(target);
         isCompleted = true;
 

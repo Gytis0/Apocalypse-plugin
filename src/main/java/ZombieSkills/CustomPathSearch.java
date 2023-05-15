@@ -10,16 +10,17 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
-public abstract class CustomPathSearch implements Skill {
-    World world;
-    List<BlockFace> directions;
+public class CustomPathSearch {
+    static World world;
+    static List<BlockFace> directions;
 
-    int ledgeSearchRange = 10;
+    static int ledgeSearchRange = 10;
 
     public CustomPathSearch(World world) {
         this.world = world;
@@ -30,18 +31,8 @@ public abstract class CustomPathSearch implements Skill {
         directions.add(BlockFace.WEST);
     }
 
-    protected boolean isPathTooSteep(Location origin, Location target) {
-        int x = Math.abs(target.getBlockX() - origin.getBlockX());
-        int y = Math.abs(target.getBlockY() - origin.getBlockY());
-        int z = Math.abs(target.getBlockZ() - origin.getBlockZ());
-
-        Bukkit.getLogger().info("X: " + x + ". Y: " + y + ". Z: " + z);
-        if (x + z >= y) {
-            return false;
-        } else return true;
-    }
-
-    protected Block findTopBlockFromY(int x, int y, int z) {
+    // FIND various blocks
+    public static Block findTopBlockFromY(int x, int y, int z) {
         Block block = world.getBlockAt(x, y, z);
 
         if (block.getType() == Material.AIR) {
@@ -63,8 +54,100 @@ public abstract class CustomPathSearch implements Skill {
         return block;
     }
 
-    // get a custom path between two entities
-    protected List<Block> getCustomPathTopBlocks(LivingEntity origin, LivingEntity target) {
+    public static Block getTopBlock(LivingEntity entity) {
+        Block block = entity.getLocation().getBlock().getRelative(0, -1, 0);
+        int modX = 0, modZ = 0;
+        if (block.getType() == Material.AIR) {
+            double x = entity.getLocation().getX();
+            double z = entity.getLocation().getZ();
+            double xd = Math.abs(x - Math.round(x)), zd = Math.abs(z - Math.round(z));
+
+            // Check for closest blocks, see if they're AIR. If yes, search around, if no, return
+            if (xd < zd) {
+                modX = Utils.getRoundedMod(x);
+                if (block.getRelative(modX, 0, modZ).getType() == Material.AIR) {
+                    modZ = Utils.getRoundedMod(z);
+                    modX = 0;
+                    if (block.getRelative(modX, 0, modZ).getType() == Material.AIR) {
+                        modX = Utils.getRoundedMod(x);
+                    }
+                }
+            } else {
+                modZ = Utils.getRoundedMod(z);
+                if (block.getRelative(modX, 0, modZ).getType() == Material.AIR) {
+                    modX = Utils.getRoundedMod(x);
+                    modZ = 0;
+                    if (block.getRelative(modX, 0, modZ).getType() == Material.AIR) {
+                        modZ = Utils.getRoundedMod(z);
+                    }
+                }
+            }
+        }
+        return block.getRelative(modX, 0, modZ);
+    }
+
+    public static Block getNearestLedge(LivingEntity entity) {
+        List<Block> checkedBlocks = new ArrayList<>();
+        Queue<Point> blocksToCheck = new LinkedList<>();
+
+        Block topBlock = getTopBlock(entity);
+        Block tempBlock;
+        Point tempPoint;
+
+        blocksToCheck.add(new Point(topBlock));
+        checkedBlocks.add(topBlock);
+
+        while (!blocksToCheck.isEmpty()) {
+            tempPoint = blocksToCheck.poll();
+            Bukkit.getLogger().info("Queue check for: " + tempPoint.getBlock().toString());
+
+            if (tempPoint.getLength() > ledgeSearchRange) {
+                Bukkit.getLogger().info("Out of range.");
+                continue;
+            }
+
+            if (tempPoint.getBlock().getType() == Material.AIR && isBlockClear(tempPoint.getBlock())) {
+                return tempPoint.getBlock();
+            }
+
+            Bukkit.getLogger().info("Block is not a ledge");
+
+            for (BlockFace direction : directions) {
+                tempBlock = tempPoint.getBlock().getRelative(direction);
+
+                if (isBlockClear(tempBlock) && !checkedBlocks.contains(tempBlock.getRelative(direction))) {
+                    blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1));
+                    checkedBlocks.add(tempBlock);
+                }
+            }
+        }
+
+        // No ledge could be found
+        Bukkit.getLogger().info("No ledge could be found.");
+        return null;
+    }
+
+    @Nullable
+    public static Block getFirstObstacleTo(LivingEntity origin, LivingEntity entity) {
+        List<Block> customPath = getPathTopBlocks(origin, entity);
+        return getFirstObstacleOf(customPath);
+    }
+
+    @Nullable
+    public static Block getFirstObstacleOf(List<Block> path) {
+        int y = path.get(0).getY();
+        for (Block block : path) {
+            if (block.getY() - y > 1) {
+                return block;
+            } else {
+                y = block.getY();
+            }
+        }
+        return null;
+    }
+
+    // GET a path
+    public static List<Block> getPathTopBlocks(LivingEntity origin, LivingEntity target) {
         Location originLoc = getTopBlock(origin).getLocation();
         Location targetLoc = getTopBlock(target).getLocation();
 
@@ -104,7 +187,7 @@ public abstract class CustomPathSearch implements Skill {
         return blocks;
     }
 
-    protected List<Block> getStraightLinePath(Location originLoc, Location targetLoc) {
+    public static List<Block> getPathStraightLine(Location originLoc, Location targetLoc) {
         // Won't calculate a path if it would be too steep to use
         if (isPathTooSteep(originLoc, targetLoc)) {
             Bukkit.getLogger().info("Path would be too steep");
@@ -159,7 +242,8 @@ public abstract class CustomPathSearch implements Skill {
         return blocks;
     }
 
-    protected boolean isPathClear(List<Block> path) {
+    // booleans
+    public static boolean isPathClear(List<Block> path) {
         Block botBlock, midBlock, topBlock;
         for (Block block : path) {
             botBlock = block.getRelative(BlockFace.UP);
@@ -174,7 +258,18 @@ public abstract class CustomPathSearch implements Skill {
         return true;
     }
 
-    protected boolean isBlockClear(Block block) {
+    public static boolean isPathTooSteep(Location origin, Location target) {
+        int x = Math.abs(target.getBlockX() - origin.getBlockX());
+        int y = Math.abs(target.getBlockY() - origin.getBlockY());
+        int z = Math.abs(target.getBlockZ() - origin.getBlockZ());
+
+        Bukkit.getLogger().info("X: " + x + ". Y: " + y + ". Z: " + z);
+        if (x + z >= y) {
+            return false;
+        } else return true;
+    }
+
+    public static boolean isBlockClear(Block block) {
         Block botBlock = block.getRelative(BlockFace.UP);
         if (botBlock.getType() != Material.AIR) return false;
 
@@ -182,97 +277,5 @@ public abstract class CustomPathSearch implements Skill {
         if (topBlock.getType() != Material.AIR) return false;
 
         return true;
-    }
-
-    protected Block getNearestLedge(LivingEntity entity) {
-        List<Block> checkedBlocks = new ArrayList<>();
-        Queue<Point> blocksToCheck = new LinkedList<>();
-
-        Block topBlock = getTopBlock(entity);
-        Block tempBlock;
-        Point tempPoint;
-
-        blocksToCheck.add(new Point(topBlock));
-        checkedBlocks.add(topBlock);
-
-        while (!blocksToCheck.isEmpty()) {
-            tempPoint = blocksToCheck.poll();
-            Bukkit.getLogger().info("Queue check for: " + tempPoint.getBlock().toString());
-
-            if (tempPoint.getLength() > ledgeSearchRange) {
-                Bukkit.getLogger().info("Out of range.");
-                continue;
-            }
-
-            if (tempPoint.getBlock().getType() == Material.AIR && isBlockClear(tempPoint.getBlock())) {
-                return tempPoint.getBlock();
-            }
-
-            Bukkit.getLogger().info("Block is not a ledge");
-
-            for (BlockFace direction : directions) {
-                tempBlock = tempPoint.getBlock().getRelative(direction);
-
-                if (isBlockClear(tempBlock) && !checkedBlocks.contains(tempBlock.getRelative(direction))) {
-                    blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1));
-                    checkedBlocks.add(tempBlock);
-                }
-            }
-        }
-
-        // No ledge could be found
-        Bukkit.getLogger().info("No ledge could be found.");
-        return null;
-    }
-
-    public Block getFirstObstacleTo(LivingEntity origin, LivingEntity entity) {
-        List<Block> customPath = getCustomPathTopBlocks(origin, entity);
-        return getFirstObstacleOf(customPath);
-    }
-
-    // find first obstacle of the custom path. If no obstacle could be found, return null.
-    protected Block getFirstObstacleOf(List<Block> path) {
-        int y = path.get(0).getY();
-        for (Block block : path) {
-            if (block.getY() - y > 1) {
-                return block;
-            } else {
-                y = block.getY();
-            }
-        }
-        return null;
-    }
-
-    // returns the block that the entity is mostly standing on
-    public Block getTopBlock(LivingEntity entity) {
-        Block block = entity.getLocation().getBlock().getRelative(0, -1, 0);
-        int modX = 0, modZ = 0;
-        if (block.getType() == Material.AIR) {
-            double x = entity.getLocation().getX();
-            double z = entity.getLocation().getZ();
-            double xd = Math.abs(x - Math.round(x)), zd = Math.abs(z - Math.round(z));
-
-            // Check for closest blocks, see if they're AIR. If yes, search around, if no, return
-            if (xd < zd) {
-                modX = Utils.getRoundedMod(x);
-                if (block.getRelative(modX, 0, modZ).getType() == Material.AIR) {
-                    modZ = Utils.getRoundedMod(z);
-                    modX = 0;
-                    if (block.getRelative(modX, 0, modZ).getType() == Material.AIR) {
-                        modX = Utils.getRoundedMod(x);
-                    }
-                }
-            } else {
-                modZ = Utils.getRoundedMod(z);
-                if (block.getRelative(modX, 0, modZ).getType() == Material.AIR) {
-                    modX = Utils.getRoundedMod(x);
-                    modZ = 0;
-                    if (block.getRelative(modX, 0, modZ).getType() == Material.AIR) {
-                        modZ = Utils.getRoundedMod(z);
-                    }
-                }
-            }
-        }
-        return block.getRelative(modX, 0, modZ);
     }
 }

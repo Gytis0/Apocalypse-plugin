@@ -16,25 +16,25 @@ public class GoalMoveTo extends Goal {
 
     public GoalMoveTo(Mob entity, Location locationGoal) {
         this.entity = entity;
-        this.locationGoal = entity.getPathfinder().findPath(locationGoal).getFinalPoint();
+        this.locationGoal = locationGoal;
     }
 
     public GoalMoveTo(Mob entity, Location locationGoal, int timeoutTime) {
         super(false, timeoutTime);
         this.entity = entity;
-        this.locationGoal = entity.getPathfinder().findPath(locationGoal).getFinalPoint();
+        this.locationGoal = locationGoal;
     }
 
     public GoalMoveTo(Mob entity, Location locationGoal, boolean mandatory) {
         super(mandatory, -1);
         this.entity = entity;
-        this.locationGoal = entity.getPathfinder().findPath(locationGoal).getFinalPoint();
+        this.locationGoal = locationGoal;
     }
 
     public GoalMoveTo(Mob entity, Location locationGoal, int timeoutTime, boolean mandatory) {
         super(mandatory, timeoutTime);
         this.entity = entity;
-        this.locationGoal = entity.getPathfinder().findPath(locationGoal).getFinalPoint();
+        this.locationGoal = locationGoal;
     }
 
     @Override

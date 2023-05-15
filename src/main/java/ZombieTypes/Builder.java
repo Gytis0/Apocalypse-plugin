@@ -56,7 +56,7 @@ public class Builder extends Regular {
         } else return;
 
         Bukkit.getLogger().info("Player is not reachable");
-        goalManager.addGoal(new GoalMoveTo(zombie, blockBuilding.getFirstObstacleTo(zombie, target).getLocation()));
+        goalManager.addGoal(new GoalMoveTo(zombie, target.getLocation()));
         goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToFirstObstacle, target, 60));
     }
 }

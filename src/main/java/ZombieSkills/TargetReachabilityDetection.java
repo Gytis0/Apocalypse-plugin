@@ -5,19 +5,22 @@ import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Zombie;
 
+import java.util.Objects;
+
 public class TargetReachabilityDetection implements Skill {
     Zombie zombie;
     Pathfinder pathfinder;
     LivingEntity target;
 
     boolean isTargetReachable = true;
-    public TargetReachabilityDetection(Zombie zombie, Pathfinder pathfinder, LivingEntity target){
+
+    public TargetReachabilityDetection(Zombie zombie, Pathfinder pathfinder, LivingEntity target) {
         this.zombie = zombie;
         this.pathfinder = pathfinder;
         this.target = target;
     }
 
-    public boolean getIsTargetReachable(){
+    public boolean getIsTargetReachable() {
         return isTargetReachable;
     }
 
@@ -29,21 +32,19 @@ public class TargetReachabilityDetection implements Skill {
         speed += Math.abs(zombie.getVelocity().getX());
         speed += Math.abs(zombie.getVelocity().getZ());
 
-        if(speed < 0.055){
+        if (speed < 0.055) {
             return true;
-        }
-        else return false;
+        } else return false;
     }
 
     @Override
     public void action() {
-
         Location closestLocation = pathfinder.findPath(target).getFinalPoint();
+        Objects.requireNonNull(closestLocation, "Target reachability detection could not find path");
 
-        if(closestLocation.distance(target.getLocation()) <= 1.5){
+        if (closestLocation.distance(target.getLocation()) <= 1.5) {
             isTargetReachable = true;
-        }
-        else{
+        } else {
             isTargetReachable = false;
         }
     }

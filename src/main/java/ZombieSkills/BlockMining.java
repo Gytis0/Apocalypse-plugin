@@ -22,7 +22,9 @@ import org.bukkit.util.Vector;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BlockMining extends CustomPathSearch implements Skill {
+import static ZombieSkills.CustomPathSearch.*;
+
+public class BlockMining implements Skill {
     Zombie zombie;
     Pathfinder pathfinder;
     World world;
@@ -47,7 +49,6 @@ public class BlockMining extends CustomPathSearch implements Skill {
     int breakingTaskId, breakTaskId;
 
     public BlockMining(Zombie zombie, Pathfinder pathfinder, World world, List<ItemStack> inventory, int activeInventorySlot) {
-        super(world);
         this.zombie = zombie;
         this.pathfinder = pathfinder;
         this.world = world;
@@ -104,7 +105,7 @@ public class BlockMining extends CustomPathSearch implements Skill {
             // Broadcast, that this skill can't reach the zombie
             blocksToBreak.add(getTopBlock(target));
         } else {
-            List<Block> optionalCustomPath = getCustomPathTopBlocks(zombie, target);
+            List<Block> optionalCustomPath = getPathTopBlocks(zombie, target);
             Block obstacle = getFirstObstacleOf(optionalCustomPath);
 
             if (obstacle != null && isBlockReachable(zombie, obstacle, mineRange)) {

@@ -3,10 +3,15 @@ package logic;
 import Model.Goals.Goal;
 import org.bukkit.Bukkit;
 
+import java.util.ArrayDeque;
 import java.util.Queue;
 
 public class GoalManager {
     protected Queue<Goal> goals;
+
+    public GoalManager() {
+        goals = new ArrayDeque<>();
+    }
 
     public boolean doGoals() {
         if (!goals.isEmpty()) {

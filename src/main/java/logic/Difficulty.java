@@ -26,7 +26,8 @@ public class Difficulty {
     Map<ZombieTypes, Integer> classesLevels;
 
     Random rand;
-    public Difficulty(){
+
+    public Difficulty() {
         thisWorld = Bukkit.getWorld("world");
 
         availableHordeSpawningSettings = new ArrayList<>();
@@ -41,7 +42,7 @@ public class Difficulty {
         availableLevelSettings = Stream.of(LevelSettings.values()).map(Enum::name).toList();
 
         availableSettings = Stream.concat(availableHordeSpawningSettings.stream(), availableLevelSettings.stream()).toList();
-        for(String diff : availableSettings){
+        for (String diff : availableSettings) {
             difficultySettings.put(diff, new DifficultySetting());
             currentSettings.put(diff, 0f);
         }
@@ -50,109 +51,130 @@ public class Difficulty {
     }
 
     // Base
-    public void setSetting(String difficultyName, Float base, Float scale, Float linear){
+    public void setSetting(String difficultyName, Float base, Float scale, Float linear) {
         difficultySettings.get(difficultyName).setSettings(base, scale, linear);
-        if(availableLevelSettings.contains(difficultyName)){
+        if (availableLevelSettings.contains(difficultyName)) {
             updateLevelSpawnPercentages();
         }
         scaleDifficulty();
     }
-    public void setDifficultySettings(Map<String, DifficultySetting> difficultySettings){
+
+    public void setDifficultySettings(Map<String, DifficultySetting> difficultySettings) {
         this.difficultySettings = difficultySettings;
     }
 
-    public DifficultySetting getSetting(LevelSettings setting){return difficultySettings.get(setting.toString());}
-    public DifficultySetting getSetting(HordeSpawningSettings setting){return difficultySettings.get(setting.toString());}
-    public DifficultySetting getSetting(String setting){return difficultySettings.get(setting);}
+    public DifficultySetting getSetting(LevelSettings setting) {
+        return difficultySettings.get(setting.toString());
+    }
 
-    public float getCurrentSetting(String setting){
+    public DifficultySetting getSetting(HordeSpawningSettings setting) {
+        return difficultySettings.get(setting.toString());
+    }
+
+    public DifficultySetting getSetting(String setting) {
+        return difficultySettings.get(setting);
+    }
+
+    public float getCurrentSetting(String setting) {
         return currentSettings.get(setting);
     }
-    public float getCurrentSetting(HordeSpawningSettings setting){
-        return currentSettings.get(setting.toString());
-    }
-    public float getCurrentSetting(LevelSettings setting){
+
+    public float getCurrentSetting(HordeSpawningSettings setting) {
         return currentSettings.get(setting.toString());
     }
 
-    public List<String> getHordeSpawningSettings(){return availableHordeSpawningSettings;}
-    public List<String> getLevelSettings(){return availableLevelSettings;}
-    public List<String> getAvailableSettings(){return availableSettings;}
-    public Map<String, DifficultySetting> getDifficultySettings(){
+    public float getCurrentSetting(LevelSettings setting) {
+        return currentSettings.get(setting.toString());
+    }
+
+    public List<String> getHordeSpawningSettings() {
+        return availableHordeSpawningSettings;
+    }
+
+    public List<String> getLevelSettings() {
+        return availableLevelSettings;
+    }
+
+    public List<String> getAvailableSettings() {
+        return availableSettings;
+    }
+
+    public Map<String, DifficultySetting> getDifficultySettings() {
         return difficultySettings;
     }
 
-    public void scaleDifficulty(long nightCount){
+    public void scaleDifficulty(long nightCount) {
 
-        for(String setting : availableSettings){
+        for (String setting : availableSettings) {
             currentSettings.put(setting, difficultySettings.get(setting).scaleUp(nightCount));
         }
         updateLevelSpawnPercentages();
     }
 
-    public void scaleDifficulty(){
+    public void scaleDifficulty() {
         long nightCount = thisWorld.getFullTime() / 24000;
-        for(String setting : availableSettings){
+        for (String setting : availableSettings) {
             currentSettings.put(setting, difficultySettings.get(setting).scaleUp(nightCount));
         }
         updateLevelSpawnPercentages();
     }
 
     // Levels
-    public int getRandomLevel(){
-        float random = rand.nextFloat(0, 1);
-        int maxLevel = (int)getCurrentSetting(LevelSettings.maxLevel);
+    public int getRandomLevel() {
+        float random = rand.nextFloat(0f, 1f);
+        int maxLevel = (int) getCurrentSetting(LevelSettings.maxLevel);
         float percentageCarry = 0f;
 
-        for(int i = 0; i <= maxLevel; i++){
-            if(random < levelSpawnPercentages.get(i) + percentageCarry){
+        for (int i = 0; i <= maxLevel; i++) {
+            if (random < levelSpawnPercentages.get(i) + percentageCarry) {
                 return i;
             }
             percentageCarry += levelSpawnPercentages.get(i);
         }
         return -1;
     }
-    public void updateLevelSpawnPercentages(){
+
+    public void updateLevelSpawnPercentages() {
         List<Float> ans = new ArrayList<>();
 
-        int maxLevel = (int)getCurrentSetting("maxLevel");
+        int maxLevel = (int) getCurrentSetting("maxLevel");
         float focus = getCurrentSetting("levelFocus");
-        int width = (int)getCurrentSetting("width");
+        int width = (int) getCurrentSetting("width");
         float falloff = getCurrentSetting("falloff");
 
         int focusTab;
-        if(focus != 1){
-            focusTab = (int)((maxLevel+1) * focus);
-        }
-        else {
+        if (focus != 1) {
+            focusTab = (int) ((maxLevel + 1) * focus);
+        } else {
             focusTab = maxLevel;
         }
         int distance, value, sum = 0;
         float blocks;
 
-        for(int i = 0; i <= maxLevel; i++){
+        for (int i = 0; i <= maxLevel; i++) {
             blocks = 0;
             distance = Math.abs(focusTab - i);
-            if(distance <= width){
+            if (distance <= width) {
                 value = width - distance;
-                blocks = (float)Math.pow(falloff, value);
-                sum+=blocks;
+                blocks = (float) Math.pow(falloff, value);
+                sum += blocks;
             }
             ans.add(blocks);
         }
 
-        for(int i = 0; i <= maxLevel; i++){
+        for (int i = 0; i <= maxLevel; i++) {
             ans.set(i, ans.get(i) / sum);
         }
 
         levelSpawnPercentages = ans;
     }
-    public List<Float> getLevelSpawnPercentages(){
+
+    public List<Float> getLevelSpawnPercentages() {
         return levelSpawnPercentages;
     }
 
     // Classes
-    public ZombieTypes getRandomClass(int level){
+    public ZombieTypes getRandomClass(int level) {
         return ZombieTypes.REGULAR;
     }
 }

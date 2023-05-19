@@ -103,7 +103,7 @@ public class BlockMining implements Skill {
         // if difference is less than 1.41, we consider the target to be right above the zombie
         if (difference < 1.41) {
             // Broadcast, that this skill can't reach the zombie
-            blocksToBreak.add(getTopBlock(target));
+            blocksToBreak.add(getEntityFloorBlock(target));
         } else {
             List<Block> optionalCustomPath = getPathTopBlocks(zombie, target);
             Block obstacle = getFirstObstacleOf(optionalCustomPath);
@@ -129,9 +129,9 @@ public class BlockMining implements Skill {
         Bukkit.getLogger().info("Using new algo");
 
         if (nextPathBlock != null) {
-            if (!getTopBlock(zombie).equals(nextPathBlock)) {
+            if (!getEntityFloorBlock(zombie).equals(nextPathBlock)) {
                 Bukkit.getLogger().info("I'm still not on my next path block. " + nextPathBlock.getLocation());
-                Bukkit.getLogger().info("I'm on " + getTopBlock(zombie).getLocation());
+                Bukkit.getLogger().info("I'm on " + getEntityFloorBlock(zombie).getLocation());
                 return;
             } else {
                 removeNextPathBlock();
@@ -144,8 +144,8 @@ public class BlockMining implements Skill {
         double difference = xDifference + yDifference;
 
         // if difference is less than 1.41, we consider the target to be right above the zombie
-        if (difference < 1.41 && getTopBlock(target).getLocation().distance(zombie.getLocation()) <= mineRange) {
-            blocksToBreak.add(getTopBlock(target));
+        if (difference < 1.41 && getEntityFloorBlock(target).getLocation().distance(zombie.getLocation()) <= mineRange) {
+            blocksToBreak.add(getEntityFloorBlock(target));
             return;
         }
 
@@ -199,7 +199,7 @@ public class BlockMining implements Skill {
 
         // if difference is less than 1.41, we consider the target to be right below the zombie
         if (difference < 1.41) {
-            blocksToBreak.add(getTopBlock(zombie));
+            blocksToBreak.add(getEntityFloorBlock(zombie));
             return;
         }
 
@@ -237,8 +237,8 @@ public class BlockMining implements Skill {
             yOffset += 1.1;
         }
 
-        Location originLoc = getTopBlock(origin).getLocation().add(0.5, yOffset, 0.5);
-        Location targetLoc = getTopBlock(target).getLocation().add(0.5, yOffset, 0.5);
+        Location originLoc = getEntityFloorBlock(origin).getLocation().add(0.5, yOffset, 0.5);
+        Location targetLoc = getEntityFloorBlock(target).getLocation().add(0.5, yOffset, 0.5);
 
         Vector direction = targetLoc.toVector().subtract(originLoc.toVector());
         double distance = originLoc.distance(targetLoc);
@@ -262,7 +262,7 @@ public class BlockMining implements Skill {
             yOffset += 1.1;
         }
 
-        Location originLoc = getTopBlock(origin).getLocation().add(0.5, yOffset, 0.5);
+        Location originLoc = getEntityFloorBlock(origin).getLocation().add(0.5, yOffset, 0.5);
 
         Vector direction = targetLoc.toVector().subtract(originLoc.toVector());
         double distance = originLoc.distance(targetLoc);

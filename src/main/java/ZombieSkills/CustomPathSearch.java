@@ -11,24 +11,14 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 
 public class CustomPathSearch {
     static World world;
-    static List<BlockFace> directions;
-
-    static int ledgeSearchRange = 10;
+    static List<BlockFace> directions = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
 
     public CustomPathSearch(World world) {
         this.world = world;
-        directions = new ArrayList<>();
-        directions.add(BlockFace.NORTH);
-        directions.add(BlockFace.EAST);
-        directions.add(BlockFace.SOUTH);
-        directions.add(BlockFace.WEST);
     }
 
     // FIND various blocks
@@ -54,7 +44,7 @@ public class CustomPathSearch {
         return block;
     }
 
-    public static Block getTopBlock(LivingEntity entity) {
+    public static Block getEntityFloorBlock(LivingEntity entity) {
         Block block = entity.getLocation().getBlock().getRelative(0, -1, 0);
         int modX = 0, modZ = 0;
         if (block.getType() == Material.AIR) {
@@ -86,11 +76,29 @@ public class CustomPathSearch {
         return block.getRelative(modX, 0, modZ);
     }
 
-    public static Block getNearestLedge(LivingEntity entity) {
+    @Nullable
+    public static Block getEntityRoofBlock(LivingEntity entity, int range) {
+        Block startBlock = getEntityFloorBlock(entity);
+        Block tempBlock = startBlock.getRelative(BlockFace.UP);
+
+        for (int i = 0; i < range; i++) {
+            if (tempBlock.getType() != Material.AIR) {
+                return tempBlock;
+            }
+
+            tempBlock = tempBlock.getRelative(BlockFace.UP);
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static Set<Block> getNearestLedge(LivingEntity entity, int range) {
         List<Block> checkedBlocks = new ArrayList<>();
         Queue<Point> blocksToCheck = new LinkedList<>();
+        Set<Block> ledges = new HashSet<>();
 
-        Block topBlock = getTopBlock(entity);
+        Block topBlock = getEntityFloorBlock(entity);
         Block tempBlock;
         Point tempPoint;
 
@@ -101,31 +109,54 @@ public class CustomPathSearch {
             tempPoint = blocksToCheck.poll();
             Bukkit.getLogger().info("Queue check for: " + tempPoint.getBlock().toString());
 
-            if (tempPoint.getLength() > ledgeSearchRange) {
+            if (tempPoint.getLength() > range) {
                 Bukkit.getLogger().info("Out of range.");
                 continue;
             }
 
-            if (tempPoint.getBlock().getType() == Material.AIR && isBlockClear(tempPoint.getBlock())) {
-                return tempPoint.getBlock();
+            if (isBlockLedge(tempPoint.getBlock())) {
+                ledges.add(tempPoint.getBlock());
+                continue;
             }
 
-            Bukkit.getLogger().info("Block is not a ledge");
+            tempBlock = tempPoint.getBlock().getRelative(BlockFace.UP);
+            if (tempBlock.getType() != Material.AIR && !checkedBlocks.contains(tempBlock)) {
+                blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1));
+                checkedBlocks.add(tempBlock);
+                continue;
+            }
 
+            if (tempBlock.getType() != Material.AIR) continue;
+
+            tempBlock = tempPoint.getBlock().getRelative(BlockFace.DOWN);
+            if (tempPoint.getBlock().getType() == Material.AIR && isBlockClear(tempPoint.getBlock()) && tempBlock.getType() != Material.AIR && !checkedBlocks.contains(tempBlock)) {
+                blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1));
+                checkedBlocks.add(tempBlock);
+                continue;
+            }
+
+            if (tempPoint.getBlock().getType() == Material.AIR) continue;
+
+
+            Bukkit.getLogger().info("Block is not a ledge");
             for (BlockFace direction : directions) {
                 tempBlock = tempPoint.getBlock().getRelative(direction);
 
-                if (isBlockClear(tempBlock) && !checkedBlocks.contains(tempBlock.getRelative(direction))) {
+                if (!checkedBlocks.contains(tempBlock.getRelative(direction))) {
                     blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1));
                     checkedBlocks.add(tempBlock);
                 }
             }
         }
 
-        // No ledge could be found
-        Bukkit.getLogger().info("No ledge could be found.");
-        return null;
+        if (!ledges.isEmpty()) {
+            return ledges;
+        } else {
+            Bukkit.getLogger().info("No ledges could be found.");
+            return null;
+        }
     }
+
 
     @Nullable
     public static Block getFirstObstacleTo(LivingEntity origin, LivingEntity entity) {
@@ -148,8 +179,8 @@ public class CustomPathSearch {
 
     // GET a path
     public static List<Block> getPathTopBlocks(LivingEntity origin, LivingEntity target) {
-        Location originLoc = getTopBlock(origin).getLocation();
-        Location targetLoc = getTopBlock(target).getLocation();
+        Location originLoc = getEntityFloorBlock(origin).getLocation();
+        Location targetLoc = getEntityFloorBlock(target).getLocation();
 
         double xLength = Math.abs(originLoc.getX() - targetLoc.getX());
         double zLength = Math.abs(originLoc.getZ() - targetLoc.getZ());
@@ -173,7 +204,7 @@ public class CustomPathSearch {
         while (true) {
             cordX = (int) (originLoc.getX() + (x * xDirection));
             cordZ = (int) (originLoc.getZ() + (z * zDirection));
-            block = findTopBlockFromY(cordX, getTopBlock(origin).getY(), cordZ);
+            block = findTopBlockFromY(cordX, getEntityFloorBlock(origin).getY(), cordZ);
             if (!blocks.contains(block)) {
                 blocks.add(block);
             }
@@ -277,5 +308,11 @@ public class CustomPathSearch {
         if (topBlock.getType() != Material.AIR) return false;
 
         return true;
+    }
+
+    public static boolean isBlockLedge(Block block) {
+        if (block.getType() == Material.AIR && block.getRelative(BlockFace.DOWN).getType() == Material.AIR && isBlockClear(block))
+            return true;
+        return false;
     }
 }

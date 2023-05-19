@@ -38,7 +38,7 @@ public class BlockBuilding implements Skill {
 
         Block obstacle = getFirstObstacleOf(path);
 
-        path = getPathStraightLine(getTopBlock(zombie).getLocation(), obstacle.getLocation());
+        path = getPathStraightLine(getEntityFloorBlock(zombie).getLocation(), obstacle.getLocation());
         if (path != null) {
             Bukkit.getLogger().info("PATH SET TO:");
             for (Block block : path) {
@@ -63,8 +63,8 @@ public class BlockBuilding implements Skill {
 
     public void setPathToLedge(LivingEntity target) {
         Bukkit.getLogger().info("Setting path to LEDGE...");
-        Block ledge = getNearestLedge(target);
-        path = getPathStraightLine(getTopBlock(zombie).getLocation(), ledge.getLocation());
+        Block ledge = getNearestLedge(target, 10).iterator().next();
+        path = getPathStraightLine(getEntityFloorBlock(zombie).getLocation(), ledge.getLocation());
         if (path != null) {
             Bukkit.getLogger().info("PATH SET TO:");
             for (Block block : path) {
@@ -83,7 +83,7 @@ public class BlockBuilding implements Skill {
 
         Block obstacle = getFirstObstacleOf(path);
 
-        path = getPathStraightLine(getTopBlock(zombie).getLocation(), obstacle.getLocation());
+        path = getPathStraightLine(getEntityFloorBlock(zombie).getLocation(), obstacle.getLocation());
         if (path != null) {
             Bukkit.getLogger().info("PATH SET TO:");
             for (Block block : path) {

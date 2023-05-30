@@ -63,7 +63,7 @@ public class BlockBuilding implements Skill {
 
     public void setPathToLedge(LivingEntity target) {
         Bukkit.getLogger().info("Setting path to LEDGE...");
-        Block ledge = getNearestLedge(target, 10).iterator().next();
+        Block ledge = getNearestLedges(target, 10, 0).iterator().next();
         path = getPathStraightLine(getEntityFloorBlock(zombie).getLocation(), ledge.getLocation());
         if (path != null) {
             Bukkit.getLogger().info("PATH SET TO:");

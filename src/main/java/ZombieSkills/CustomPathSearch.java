@@ -14,7 +14,7 @@ import javax.annotation.Nullable;
 import java.util.*;
 
 public class CustomPathSearch {
-    static World world;
+    static World world = Bukkit.getWorld("world");
     static List<BlockFace> directions = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
 
     public CustomPathSearch(World world) {
@@ -39,6 +39,16 @@ public class CustomPathSearch {
 
         while (block.getRelative(BlockFace.UP).getType() != Material.AIR) {
             block = block.getRelative(BlockFace.UP);
+        }
+
+        return block;
+    }
+
+    public static Block findBotBlockFromY(int x, int y, int z) {
+        Block block = world.getBlockAt(x, y, z);
+
+        while (block.getType() == Material.AIR) {
+            block = block.getRelative(BlockFace.DOWN);
         }
 
         return block;
@@ -93,7 +103,7 @@ public class CustomPathSearch {
     }
 
     @Nullable
-    public static Set<Block> getNearestLedge(LivingEntity entity, int range) {
+    public static Set<Block> getNearestLedges(LivingEntity entity, int range, int obstaclesToIgnore) {
         List<Block> checkedBlocks = new ArrayList<>();
         Queue<Point> blocksToCheck = new LinkedList<>();
         Set<Block> ledges = new HashSet<>();
@@ -107,21 +117,30 @@ public class CustomPathSearch {
 
         while (!blocksToCheck.isEmpty()) {
             tempPoint = blocksToCheck.poll();
-            Bukkit.getLogger().info("Queue check for: " + tempPoint.getBlock().toString());
+            //Bukkit.getLogger().info("Queue check for: " + tempPoint.getBlock().toString());
 
-            if (tempPoint.getLength() > range) {
-                Bukkit.getLogger().info("Out of range.");
+            if (tempPoint.getLength() > range || tempPoint.getObstaclesReached() > obstaclesToIgnore) {
+                Bukkit.getLogger().info("Out of range or too many obstacles passed.");
                 continue;
             }
 
             if (isBlockLedge(tempPoint.getBlock())) {
-                ledges.add(tempPoint.getBlock());
-                continue;
+                if (tempPoint.getObstaclesReached() >= obstaclesToIgnore) {
+                    ledges.add(tempPoint.getBlock());
+                    continue;
+                } else {
+                    Bukkit.getLogger().info("Passing an obstacle...");
+                    tempBlock = tempPoint.getBlock();
+                    tempBlock = findBotBlockFromY(tempBlock.getX(), tempBlock.getY(), tempBlock.getZ());
+                    blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1, tempPoint.getObstaclesReached() + 1));
+                    checkedBlocks.add(tempBlock);
+                    continue;
+                }
             }
 
             tempBlock = tempPoint.getBlock().getRelative(BlockFace.UP);
             if (tempBlock.getType() != Material.AIR && !checkedBlocks.contains(tempBlock)) {
-                blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1));
+                blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1, tempPoint.getObstaclesReached()));
                 checkedBlocks.add(tempBlock);
                 continue;
             }
@@ -130,7 +149,7 @@ public class CustomPathSearch {
 
             tempBlock = tempPoint.getBlock().getRelative(BlockFace.DOWN);
             if (tempPoint.getBlock().getType() == Material.AIR && isBlockClear(tempPoint.getBlock()) && tempBlock.getType() != Material.AIR && !checkedBlocks.contains(tempBlock)) {
-                blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1));
+                blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1, tempPoint.getObstaclesReached()));
                 checkedBlocks.add(tempBlock);
                 continue;
             }
@@ -143,7 +162,7 @@ public class CustomPathSearch {
                 tempBlock = tempPoint.getBlock().getRelative(direction);
 
                 if (!checkedBlocks.contains(tempBlock.getRelative(direction))) {
-                    blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1));
+                    blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1, tempPoint.getObstaclesReached()));
                     checkedBlocks.add(tempBlock);
                 }
             }

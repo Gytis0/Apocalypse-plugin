@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Set;
 
-import static ZombieSkills.CustomPathSearch.getNearestLedge;
+import static ZombieSkills.CustomPathSearch.getNearestLedges;
 
 public class PlaceBlockAtLedge implements TabExecutor {
 
@@ -22,7 +22,15 @@ public class PlaceBlockAtLedge implements TabExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        Set<Block> ledges = getNearestLedge((Player) sender, 10);
+        int range = 10, obstacles = 0;
+        if (args.length > 0) {
+            range = Integer.parseInt(args[0]);
+        }
+        if (args.length > 1) {
+            obstacles = Integer.parseInt(args[1]);
+        }
+
+        Set<Block> ledges = getNearestLedges((Player) sender, range, obstacles);
 
         if (ledges != null) {
             for (Block block : ledges) {

@@ -1,5 +1,6 @@
 package apocalypse.apocalypse;
 
+import Commands.Debugging.PlaceBlockAt45;
 import Commands.Debugging.PlaceBlockAtLedge;
 import Commands.Printing.*;
 import Commands.ResetMods;
@@ -7,15 +8,15 @@ import Commands.Settings.*;
 import Commands.Spawning.DespawnZombies;
 import Commands.Spawning.SpawnSquad;
 import Commands.ToggleApocalypse;
-import Model.DifficultySetting;
 import Handlers.BedHandler;
 import Handlers.PlayerHandler;
 import Handlers.WorldHandler;
 import Handlers.ZombieHandler;
-import logic.Settings;
-import logic.ZombieSpawner;
+import Model.DifficultySetting;
 import Utility.DelayedTask;
 import Utility.RepeatableTask;
+import logic.Settings;
+import logic.ZombieSpawner;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
@@ -56,7 +57,7 @@ public final class Apocalypse extends JavaPlugin {
         Bukkit.getLogger().info("Goodbye world :(");
     }
 
-    void setupCommands(){
+    void setupCommands() {
         // Printing
         getCommand("printHelp").setExecutor(new PrintHelp(this));
         getCommand("printDifficultySettings").setExecutor(new PrintDifficultySettings(settings.getDifficulty()));
@@ -85,5 +86,6 @@ public final class Apocalypse extends JavaPlugin {
 
         // Debugging
         getCommand("placeBlockAtLedge").setExecutor(new PlaceBlockAtLedge());
+        getCommand("placeBlockAt45").setExecutor(new PlaceBlockAt45(overworld));
     }
 }

@@ -1,5 +1,7 @@
 package Model.Goals;
 
+import Enums.GoalType;
+
 public interface IGoal {
     public void run();
 
@@ -8,4 +10,6 @@ public interface IGoal {
     public boolean isFailed();
 
     public boolean isMandatory();
+
+    public GoalType getGoalType();
 }

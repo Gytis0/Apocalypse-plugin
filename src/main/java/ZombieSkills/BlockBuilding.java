@@ -18,6 +18,7 @@ import static ZombieSkills.CustomPathSearch.*;
 
 public class BlockBuilding implements Skill {
     Zombie zombie;
+    LivingEntity target;
     Pathfinder pathfinder;
     World world;
     List<ItemStack> inventory;
@@ -29,26 +30,9 @@ public class BlockBuilding implements Skill {
 
     List<Block> path;
 
-    public ReachTarget setPathToLedge = (target -> setPathToLedge(target));
+    public ReachTarget setPathToLedge = this::setPathToLedge;
 
-    public ReachTarget setPathToFirstObstacle = (target) -> {
-        Bukkit.getLogger().info("Setting path to FIRST OBSTACLE...");
-
-        path = getPathTopBlocks(zombie, target);
-
-        Block obstacle = getFirstObstacleOf(path);
-
-        path = getPathStraightLine(getEntityFloorBlock(zombie).getLocation(), obstacle.getLocation());
-        if (path != null) {
-            Bukkit.getLogger().info("PATH SET TO:");
-            for (Block block : path) {
-                Bukkit.getLogger().info(block.getLocation().toString());
-            }
-        } else {
-            Bukkit.getLogger().info("Could not set a path");
-            path = new ArrayList<>();
-        }
-    };
+    public ReachTarget setPathToFirstObstacle = this::setPathToFirstObstacle;
 
     public BlockBuilding(Zombie zombie, Pathfinder pathfinder, World world, List<ItemStack> inventory, int activeInventorySlot) {
         this.zombie = zombie;
@@ -61,9 +45,10 @@ public class BlockBuilding implements Skill {
         inventory.add(new ItemStack(Material.MOSS_BLOCK));
     }
 
-    public void setPathToLedge(LivingEntity target) {
+    public void setPathToLedge(LivingEntity target, int range, int obstaclesToIgnore) {
         Bukkit.getLogger().info("Setting path to LEDGE...");
-        Block ledge = getNearestLedges(target, 10, 0).iterator().next();
+        this.target = target;
+        Block ledge = getNearestLedge(target, range, obstaclesToIgnore);
         path = getPathStraightLine(getEntityFloorBlock(zombie).getLocation(), ledge.getLocation());
         if (path != null) {
             Bukkit.getLogger().info("PATH SET TO:");
@@ -76,8 +61,9 @@ public class BlockBuilding implements Skill {
         }
     }
 
-    public void setPathToFirstObstacle(LivingEntity target) {
+    public void setPathToFirstObstacle(LivingEntity target, int range, int obstaclesToIgnore) {
         Bukkit.getLogger().info("Setting path to FIRST OBSTACLE...");
+        this.target = target;
 
         path = getPathTopBlocks(zombie, target);
 
@@ -91,6 +77,7 @@ public class BlockBuilding implements Skill {
             }
         } else {
             Bukkit.getLogger().info("Could not set a path");
+            path = new ArrayList<>();
         }
     }
 
@@ -120,8 +107,11 @@ public class BlockBuilding implements Skill {
         } else {
             Bukkit.getLogger().info("Moving to block:" + path.get(0).getLocation());
             if (lastPlacedBlock != null) {
-                //pathfinder.moveTo(path.get(0).getLocation());
                 pathfinder.moveTo(lastPlacedBlock.getLocation());
+            } else {
+                Bukkit.getLogger().info("Moving to first location");
+                Location startLocation = CustomPathSearch.findLocationForPathBuilding(target.getLocation(), zombie.getLocation()).getLocation();
+                pathfinder.moveTo(startLocation);
             }
         }
     }

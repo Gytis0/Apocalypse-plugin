@@ -2,13 +2,12 @@ package ZombieSkills;
 
 import Model.Point;
 import Utility.Utils;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.util.RayTraceResult;
+import org.bukkit.util.Vector;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -120,7 +119,7 @@ public class CustomPathSearch {
             //Bukkit.getLogger().info("Queue check for: " + tempPoint.getBlock().toString());
 
             if (tempPoint.getLength() > range || tempPoint.getObstaclesReached() > obstaclesToIgnore) {
-                Bukkit.getLogger().info("Out of range or too many obstacles passed.");
+                //Bukkit.getLogger().info("Out of range or too many obstacles passed.");
                 continue;
             }
 
@@ -128,6 +127,78 @@ public class CustomPathSearch {
                 if (tempPoint.getObstaclesReached() >= obstaclesToIgnore) {
                     ledges.add(tempPoint.getBlock());
                     continue;
+                } else {
+                    //Bukkit.getLogger().info("Passing an obstacle...");
+                    tempBlock = tempPoint.getBlock();
+                    tempBlock = findBotBlockFromY(tempBlock.getX(), tempBlock.getY(), tempBlock.getZ());
+                    blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1, tempPoint.getObstaclesReached() + 1));
+                    checkedBlocks.add(tempBlock);
+                    continue;
+                }
+            }
+
+            tempBlock = tempPoint.getBlock().getRelative(BlockFace.UP);
+            if (tempBlock.getType() != Material.AIR && !checkedBlocks.contains(tempBlock)) {
+                blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1, tempPoint.getObstaclesReached()));
+                checkedBlocks.add(tempBlock);
+                continue;
+            }
+
+            if (tempBlock.getType() != Material.AIR) continue;
+
+            tempBlock = tempPoint.getBlock().getRelative(BlockFace.DOWN);
+            if (tempPoint.getBlock().getType() == Material.AIR && isBlockClear(tempPoint.getBlock()) && tempBlock.getType() != Material.AIR && !checkedBlocks.contains(tempBlock)) {
+                blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1, tempPoint.getObstaclesReached()));
+                checkedBlocks.add(tempBlock);
+                continue;
+            }
+
+            if (tempPoint.getBlock().getType() == Material.AIR) continue;
+
+
+            //Bukkit.getLogger().info("Block is not a ledge");
+            for (BlockFace direction : directions) {
+                tempBlock = tempPoint.getBlock().getRelative(direction);
+
+                if (!checkedBlocks.contains(tempBlock.getRelative(direction))) {
+                    blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1, tempPoint.getObstaclesReached()));
+                    checkedBlocks.add(tempBlock);
+                }
+            }
+        }
+
+        if (!ledges.isEmpty()) {
+            return ledges;
+        } else {
+            Bukkit.getLogger().info("No ledges could be found.");
+            return null;
+        }
+    }
+
+    @Nullable
+    public static Block getNearestLedge(LivingEntity entity, int range, int obstaclesToIgnore) {
+        List<Block> checkedBlocks = new ArrayList<>();
+        Queue<Point> blocksToCheck = new LinkedList<>();
+
+        Block topBlock = getEntityFloorBlock(entity);
+        Block tempBlock;
+        Point tempPoint;
+
+        blocksToCheck.add(new Point(topBlock));
+        checkedBlocks.add(topBlock);
+
+        while (!blocksToCheck.isEmpty()) {
+            tempPoint = blocksToCheck.poll();
+            Bukkit.getLogger().info("Queue check for: " + tempPoint.getBlock().toString());
+
+            if (tempPoint.getLength() > range || tempPoint.getObstaclesReached() > obstaclesToIgnore) {
+                Bukkit.getLogger().info("Out of range or too many obstacles passed.");
+                continue;
+            }
+
+            if (isBlockLedge(tempPoint.getBlock())) {
+                if (tempPoint.getObstaclesReached() >= obstaclesToIgnore) {
+                    return tempPoint.getBlock();
                 } else {
                     Bukkit.getLogger().info("Passing an obstacle...");
                     tempBlock = tempPoint.getBlock();
@@ -156,7 +227,6 @@ public class CustomPathSearch {
 
             if (tempPoint.getBlock().getType() == Material.AIR) continue;
 
-
             Bukkit.getLogger().info("Block is not a ledge");
             for (BlockFace direction : directions) {
                 tempBlock = tempPoint.getBlock().getRelative(direction);
@@ -168,12 +238,8 @@ public class CustomPathSearch {
             }
         }
 
-        if (!ledges.isEmpty()) {
-            return ledges;
-        } else {
-            Bukkit.getLogger().info("No ledges could be found.");
-            return null;
-        }
+        Bukkit.getLogger().info("No ledges could be found.");
+        return null;
     }
 
 
@@ -194,6 +260,34 @@ public class CustomPathSearch {
             }
         }
         return null;
+    }
+
+    @Nullable
+    public static Block findLocationForPathBuilding(Location targetLoc, Location builderLoc) {
+        double smallestDistance = 9999;
+        Block result = null;
+        List<Block> possibleResults = new ArrayList<>();
+        List<Vector> vectors = Arrays.asList(new Vector(0, -0.7, -1), new Vector(1, -0.7, 0), new Vector(0, -0.7, 1), new Vector(-1, -0.7, 0));
+
+        for (Vector v : vectors) {
+            RayTraceResult ray = world.rayTrace(targetLoc, v, 16, FluidCollisionMode.ALWAYS, true, 16, null);
+            if (ray != null && ray.getHitBlock() != null) {
+                possibleResults.add(ray.getHitBlock());
+            }
+        }
+
+        for (Block b : possibleResults) {
+            if (b.getLocation().distance(builderLoc) < smallestDistance) {
+                smallestDistance = b.getLocation().distance(builderLoc);
+                result = b;
+            }
+        }
+
+        if (result != null) {
+            return result;
+        } else {
+            return null;
+        }
     }
 
     // GET a path

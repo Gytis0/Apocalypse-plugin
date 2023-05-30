@@ -11,9 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Set;
 
-import static ZombieSkills.CustomPathSearch.getNearestLedges;
+import static ZombieSkills.CustomPathSearch.getNearestLedge;
 
 public class PlaceBlockAtLedge implements TabExecutor {
 
@@ -30,13 +29,10 @@ public class PlaceBlockAtLedge implements TabExecutor {
             obstacles = Integer.parseInt(args[1]);
         }
 
-        Set<Block> ledges = getNearestLedges((Player) sender, range, obstacles);
+        Block ledge = getNearestLedge((Player) sender, range, obstacles);
 
-        if (ledges != null) {
-            for (Block block : ledges) {
-                block.setType(Material.GLASS);
-            }
-            sender.sendMessage(ChatColor.GREEN + "" + ledges.size() + " ledges found.");
+        if (ledge != null) {
+            ledge.setType(Material.GLASS);
         } else {
             sender.sendMessage(ChatColor.RED + "No ledges could be found.");
         }

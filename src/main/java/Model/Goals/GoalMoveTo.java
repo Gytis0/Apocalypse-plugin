@@ -1,38 +1,34 @@
 package Model.Goals;
 
+import Enums.GoalType;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Mob;
 
 public class GoalMoveTo extends Goal {
-    boolean isCompleted = false;
-    boolean isFailed = false;
-    boolean isMandatory = false;
-    int lifetime = 0;
-    int timeoutTime;
-
     Mob entity;
     Location locationGoal;
 
     public GoalMoveTo(Mob entity, Location locationGoal) {
         this.entity = entity;
         this.locationGoal = locationGoal;
+        this.goalType = GoalType.MOVEMENT;
     }
 
     public GoalMoveTo(Mob entity, Location locationGoal, int timeoutTime) {
-        super(false, timeoutTime);
+        super(GoalType.MOVEMENT, false, timeoutTime);
         this.entity = entity;
         this.locationGoal = locationGoal;
     }
 
     public GoalMoveTo(Mob entity, Location locationGoal, boolean mandatory) {
-        super(mandatory, -1);
+        super(GoalType.MOVEMENT, mandatory, -1);
         this.entity = entity;
         this.locationGoal = locationGoal;
     }
 
     public GoalMoveTo(Mob entity, Location locationGoal, int timeoutTime, boolean mandatory) {
-        super(mandatory, timeoutTime);
+        super(GoalType.MOVEMENT, mandatory, timeoutTime);
         this.entity = entity;
         this.locationGoal = locationGoal;
     }

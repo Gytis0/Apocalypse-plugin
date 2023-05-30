@@ -21,9 +21,9 @@ commands:
     aliases: [ setdiff ]
 
   saveApocalypseSettings:
-      description: Save current apocalypse settings to config files.
-      usage: /saveapocalypsesettings
-      aliases: [ save ]
+    description: Save current apocalypse settings to config files.
+    usage: /saveapocalypsesettings
+    aliases: [ save ]
 
   #Horde settings
   setZombieType:
@@ -50,42 +50,42 @@ commands:
   printHelp:
     description: Prints help for the apocalypse plugin.
     usage: /apocalypsehelp
-    aliases: [aphelp, printaphelp]
+    aliases: [ aphelp, printaphelp ]
 
   printDifficultySettings:
     description: Prints base apocalypse difficulty settings.
     usage: /difficultysettings
-    aliases: [diffsets, dsets, diff]
+    aliases: [ diffsets, dsets, diff ]
 
   printCurrentSettings:
     description: Prints current on-going apocalypse scaled difficulty settings.
     usage: /currentsettings
-    aliases: [cdiffsets, cdsets]
+    aliases: [ cdiffsets, cdsets ]
 
   printActiveZombies:
     description: Prints how many active zombies there are.
     usage: /printactivezombies
-    aliases: [paz]
+    aliases: [ paz ]
 
   printLevelSpawnPercentages:
     description: Prints a table of level spawn chances.
     usage: /printlevelspawnpercentages
-    aliases: [plsp, printchances]
+    aliases: [ plsp, printchances ]
 
   printZombieTypes:
     description: Prints a table of zombie types and their properties.
     usage: /printzombietypes
-    aliases: [pzt, printtypes]
+    aliases: [ pzt, printtypes ]
 
   printSquads:
     description: Prints a table of created squads.
     usage: /printsquads
-    aliases: [ps]
+    aliases: [ ps ]
 
   printMyVector:
     description: Prints your facing of vector
     usage: /printmyvector
-    aliases: [pmv]
+    aliases: [ pmv ]
 
   #Utility
   spawnSquad:
@@ -100,3 +100,7 @@ commands:
   placeBlockAtLedge:
     description: Places a glass block at a calculated ledge. Used for debugging purposes.
     usage: /placeblockatledge
+
+  placeBlockAt45:
+    description: Places a block at 45 degrees angle down to NORTH
+    usage: /placeblockat45

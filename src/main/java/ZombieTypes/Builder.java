@@ -1,7 +1,8 @@
 package ZombieTypes;
 
+import Enums.PathType;
 import Enums.ZombieTypes;
-import Model.Goals.GoalMoveTo;
+import Model.Goals.Goal;
 import Model.Goals.GoalReachTarget;
 import Utility.RepeatableTask;
 import ZombieSkills.BlockBuilding;
@@ -10,12 +11,19 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 
+import java.util.Queue;
+
 
 public class Builder extends Regular {
 
     // Skills
     BlockBuilding blockBuilding;
     TargetReachabilityDetection targetReachabilityDetection;
+
+    // AI
+    int pathIndex = 0;
+    int pathLevel = 1;
+    int pathCycle = 0;
 
     public Builder(Location tempLoc, LivingEntity target, int level) {
         super(tempLoc, target, level);
@@ -56,7 +64,34 @@ public class Builder extends Regular {
         } else return;
 
         Bukkit.getLogger().info("Player is not reachable");
-        goalManager.addGoal(new GoalMoveTo(zombie, target.getLocation()));
-        goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToFirstObstacle, target, 60));
+
+        Queue<Goal> fails = goalManager.getMostRecentFails();
+        GoalReachTarget goal;
+
+        for (Goal g : fails) {
+            try {
+                goal = (GoalReachTarget) g;
+            } catch (ClassCastException e) {
+                continue;
+            }
+
+            if (goal.getPathType() == PathType.NEAREST_LEDGE) {
+                if (pathLevel < 3) pathLevel++;
+                else {
+                    pathLevel = 1;
+                    pathIndex++;
+                }
+            } else if (goal.getPathType() == PathType.FIRST_OBSTACLE) {
+                pathLevel = 1;
+                pathIndex = 0;
+                cycle++;
+            }
+        }
+
+        if (pathIndex == 0) {
+            goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToLedge, target, 10 * pathLevel, pathCycle, PathType.NEAREST_LEDGE));
+        } else if (pathIndex == 1) {
+            goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToLedge, target, 10 * pathLevel, pathCycle, PathType.FIRST_OBSTACLE));
+        }
     }
 }

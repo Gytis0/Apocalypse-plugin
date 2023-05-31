@@ -6,6 +6,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
@@ -102,7 +103,7 @@ public class CustomPathSearch {
     }
 
     @Nullable
-    public static Set<Block> getNearestLedges(LivingEntity entity, int range, int obstaclesToIgnore) {
+    public static List<Block> getNearestLedges(LivingEntity entity, int range, int obstaclesToIgnore) {
         List<Block> checkedBlocks = new ArrayList<>();
         Queue<Point> blocksToCheck = new LinkedList<>();
         Set<Block> ledges = new HashSet<>();
@@ -168,7 +169,7 @@ public class CustomPathSearch {
         }
 
         if (!ledges.isEmpty()) {
-            return ledges;
+            return new ArrayList<>(ledges);
         } else {
             Bukkit.getLogger().info("No ledges could be found.");
             return null;
@@ -189,10 +190,10 @@ public class CustomPathSearch {
 
         while (!blocksToCheck.isEmpty()) {
             tempPoint = blocksToCheck.poll();
-            Bukkit.getLogger().info("Queue check for: " + tempPoint.getBlock().toString());
+            //Bukkit.getLogger().info("Queue check for: " + tempPoint.getBlock().toString());
 
             if (tempPoint.getLength() > range || tempPoint.getObstaclesReached() > obstaclesToIgnore) {
-                Bukkit.getLogger().info("Out of range or too many obstacles passed.");
+                //Bukkit.getLogger().info("Out of range or too many obstacles passed.");
                 continue;
             }
 
@@ -200,7 +201,7 @@ public class CustomPathSearch {
                 if (tempPoint.getObstaclesReached() >= obstaclesToIgnore) {
                     return tempPoint.getBlock();
                 } else {
-                    Bukkit.getLogger().info("Passing an obstacle...");
+                    //Bukkit.getLogger().info("Passing an obstacle...");
                     tempBlock = tempPoint.getBlock();
                     tempBlock = findBotBlockFromY(tempBlock.getX(), tempBlock.getY(), tempBlock.getZ());
                     blocksToCheck.add(new Point(tempBlock, tempPoint.getLength() + 1, tempPoint.getObstaclesReached() + 1));
@@ -227,7 +228,7 @@ public class CustomPathSearch {
 
             if (tempPoint.getBlock().getType() == Material.AIR) continue;
 
-            Bukkit.getLogger().info("Block is not a ledge");
+            //Bukkit.getLogger().info("Block is not a ledge");
             for (BlockFace direction : directions) {
                 tempBlock = tempPoint.getBlock().getRelative(direction);
 
@@ -238,7 +239,7 @@ public class CustomPathSearch {
             }
         }
 
-        Bukkit.getLogger().info("No ledges could be found.");
+        Bukkit.getLogger().warning("No ledges could be found.");
         return null;
     }
 
@@ -263,28 +264,31 @@ public class CustomPathSearch {
     }
 
     @Nullable
-    public static Block findLocationForPathBuilding(Location targetLoc, Location builderLoc) {
+    public static Block findLocationForPathBuilding(Location targetLoc, LivingEntity builder) {
         double smallestDistance = 9999;
+        double pathDegrees = -0.7;
         Block result = null;
         List<Block> possibleResults = new ArrayList<>();
-        List<Vector> vectors = Arrays.asList(new Vector(0, -0.7, -1), new Vector(1, -0.7, 0), new Vector(0, -0.7, 1), new Vector(-1, -0.7, 0));
+        List<Vector> vectors = Arrays.asList(new Vector(0, pathDegrees, -1), new Vector(1, pathDegrees, 0), new Vector(0, pathDegrees, 1), new Vector(-1, pathDegrees, 0));
 
         for (Vector v : vectors) {
-            RayTraceResult ray = world.rayTrace(targetLoc, v, 16, FluidCollisionMode.ALWAYS, true, 16, null);
+            RayTraceResult ray = world.rayTrace(targetLoc, v, 64, FluidCollisionMode.ALWAYS, true, 1, null);
             if (ray != null && ray.getHitBlock() != null) {
                 possibleResults.add(ray.getHitBlock());
+                Bukkit.getLogger().info("Found a ray: " + ray.getHitBlock());
             }
         }
 
         for (Block b : possibleResults) {
-            if (b.getLocation().distance(builderLoc) < smallestDistance) {
-                smallestDistance = b.getLocation().distance(builderLoc);
+            if (b.getLocation().distance(builder.getLocation()) < smallestDistance && CustomPathSearch.isTargetReachable(builder, b.getLocation()) && CustomPathSearch.isBlockClear(b)) {
+                smallestDistance = b.getLocation().distance(builder.getLocation());
                 result = b;
+                Bukkit.getLogger().info("new block assigned: " + result);
             }
         }
 
         if (result != null) {
-            return result;
+            return result.getRelative(BlockFace.UP);
         } else {
             return null;
         }
@@ -332,12 +336,6 @@ public class CustomPathSearch {
     }
 
     public static List<Block> getPathStraightLine(Location originLoc, Location targetLoc) {
-        // Won't calculate a path if it would be too steep to use
-        if (isPathTooSteep(originLoc, targetLoc)) {
-            Bukkit.getLogger().info("Path would be too steep");
-            return null;
-        }
-
         double xLength = Math.abs(originLoc.getX() - targetLoc.getX());
         double yLength = Math.abs(originLoc.getY() - targetLoc.getY());
         double zLength = Math.abs(originLoc.getZ() - targetLoc.getZ());
@@ -383,6 +381,12 @@ public class CustomPathSearch {
             if (localZ < zLength) localZ += zDelta;
         }
 
+        for (Block b : blocks) {
+            Bukkit.getLogger().info(b.getLocation().toString());
+        }
+
+        if (isPathTooSteep(blocks)) return null;
+
         return blocks;
     }
 
@@ -402,15 +406,16 @@ public class CustomPathSearch {
         return true;
     }
 
-    public static boolean isPathTooSteep(Location origin, Location target) {
-        int x = Math.abs(target.getBlockX() - origin.getBlockX());
-        int y = Math.abs(target.getBlockY() - origin.getBlockY());
-        int z = Math.abs(target.getBlockZ() - origin.getBlockZ());
-
-        Bukkit.getLogger().info("X: " + x + ". Y: " + y + ". Z: " + z);
-        if (x + z >= y) {
-            return false;
-        } else return true;
+    public static boolean isPathTooSteep(List<Block> path) {
+        double lastY = path.get(0).getY();
+        for (Block b : path) {
+            if (b.getLocation().getY() - lastY > 1) {
+                Bukkit.getLogger().warning("Path would be too steep");
+                return true;
+            }
+            lastY = b.getLocation().getY();
+        }
+        return false;
     }
 
     public static boolean isBlockClear(Block block) {
@@ -427,5 +432,15 @@ public class CustomPathSearch {
         if (block.getType() == Material.AIR && block.getRelative(BlockFace.DOWN).getType() == Material.AIR && isBlockClear(block))
             return true;
         return false;
+    }
+
+    public static boolean isTargetReachable(LivingEntity origin, Location target) {
+        Mob mob = (Mob) origin;
+        Location finalPoint = mob.getPathfinder().findPath(target).getFinalPoint();
+        if (finalPoint != null) {
+            return finalPoint.distance(target) <= 1;
+        } else {
+            return false;
+        }
     }
 }

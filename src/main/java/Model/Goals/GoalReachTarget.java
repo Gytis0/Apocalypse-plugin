@@ -2,55 +2,45 @@ package Model.Goals;
 
 import Enums.GoalType;
 import Enums.PathType;
-import Model.ReachTarget;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.Location;
 
 public class GoalReachTarget extends Goal {
     ReachTarget reachTarget;
-    LivingEntity target;
-    int range, obstaclesToIgnore;
+    Location start, end;
 
     PathType pathType;
 
-    public GoalReachTarget(ReachTarget reachTarget, LivingEntity target, int range, int obstaclesToIgnore, PathType pathType) {
+    public GoalReachTarget(ReachTarget reachTarget, Location start, Location end, PathType pathType) {
         this.reachTarget = reachTarget;
-        this.target = target;
         this.goalType = GoalType.PATH_SETTING;
         this.pathType = pathType;
-
-        this.range = range;
-        this.obstaclesToIgnore = obstaclesToIgnore;
+        this.start = start;
+        this.end = end;
     }
 
-    public GoalReachTarget(ReachTarget reachTarget, LivingEntity target, int range, int obstaclesToIgnore, int timeoutTime, PathType pathType) {
+    public GoalReachTarget(ReachTarget reachTarget, Location start, Location end, int timeoutTime, PathType pathType) {
         super(GoalType.PATH_SETTING, false, timeoutTime);
         this.reachTarget = reachTarget;
-        this.target = target;
         this.pathType = pathType;
-
-        this.range = range;
-        this.obstaclesToIgnore = obstaclesToIgnore;
+        this.start = start;
+        this.end = end;
     }
 
-    public GoalReachTarget(ReachTarget reachTarget, LivingEntity target, int range, int obstaclesToIgnore, boolean mandatory, PathType pathType) {
+    public GoalReachTarget(ReachTarget reachTarget, Location start, Location end, boolean mandatory, PathType pathType) {
         super(GoalType.PATH_SETTING, mandatory, -1);
         this.reachTarget = reachTarget;
-        this.target = target;
         this.pathType = pathType;
-
-        this.range = range;
-        this.obstaclesToIgnore = obstaclesToIgnore;
+        this.start = start;
+        this.end = end;
     }
 
-    public GoalReachTarget(ReachTarget reachTarget, LivingEntity target, int range, int obstaclesToIgnore, int timeoutTime, boolean mandatory, PathType pathType) {
+    public GoalReachTarget(ReachTarget reachTarget, Location start, Location end, int timeoutTime, boolean mandatory, PathType pathType) {
         super(GoalType.PATH_SETTING, mandatory, timeoutTime);
         this.reachTarget = reachTarget;
-        this.target = target;
         this.pathType = pathType;
-
-        this.range = range;
-        this.obstaclesToIgnore = obstaclesToIgnore;
+        this.start = start;
+        this.end = end;
     }
 
     public PathType getPathType() {
@@ -60,7 +50,7 @@ public class GoalReachTarget extends Goal {
     @Override
     public void run() {
         Bukkit.getLogger().info("REACHTARGET goal is in action");
-        reachTarget.run(target, range, obstaclesToIgnore);
+        isFailed = !reachTarget.run(start, end);
         isCompleted = true;
 
         if (lifetime > timeoutTime) {

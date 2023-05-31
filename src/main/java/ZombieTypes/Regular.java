@@ -36,12 +36,13 @@ public class Regular implements Listener {
 
     int cycle = 0;
 
-    public Regular(Location tempLoc, LivingEntity target, int level){
+    public Regular(Location tempLoc, LivingEntity target, int level) {
         this.level = level;
         zombieType = ZombieTypes.REGULAR;
         updateTask = new RepeatableTask(this::update, 0, 2f);
 
         spawnZombie(tempLoc, target);
+
         world = Bukkit.getWorld("world");
         inventory = new ArrayList<>();
         goalManager = new GoalManager();
@@ -52,23 +53,22 @@ public class Regular implements Listener {
         cycle++;
     }
 
-    protected void equip(int hotkeySlot){
-        if(hotkeySlot <= inventory.size() - 1){
+    protected void equip(int hotkeySlot) {
+        if (hotkeySlot <= inventory.size() - 1) {
             zombie.getEquipment().setItemInMainHand(inventory.get(hotkeySlot));
             Bukkit.getLogger().info("Equipped: " + inventory.get(hotkeySlot));
-        }
-        else{
+        } else {
             zombie.clearActiveItem();
             Bukkit.getLogger().info("Equipping empty hand.");
         }
     }
 
-    public LivingEntity getCustomTarget(){
+    public LivingEntity getCustomTarget() {
         return target;
     }
 
     // Utils
-    protected void spawnZombie(Location loc, LivingEntity target){
+    protected void spawnZombie(Location loc, LivingEntity target) {
         Stats.addZombieCount();
         loc.add(0, 1, 0);
 
@@ -81,8 +81,8 @@ public class Regular implements Listener {
         pathfinder = zombie.getPathfinder();
     }
 
-    protected void clearIfInvalid(){
-        if(zombie.isDead() || !zombie.isValid()){
+    protected void clearIfInvalid() {
+        if (zombie.isDead() || !zombie.isValid()) {
             Bukkit.getLogger().info("Cancelling task {" + updateTask.getId() + "}, because the zombie is dead or invalid");
             Bukkit.getScheduler().cancelTask(updateTask.getId());
 
@@ -90,7 +90,7 @@ public class Regular implements Listener {
         }
     }
 
-    protected void setName(String name){
+    protected void setName(String name) {
         zombie.setCustomNameVisible(true);
         zombie.setCustomName(ChatColor.GRAY + zombieType.toString().toUpperCase() + ChatColor.WHITE + " | " + name + ChatColor.GOLD + " [Lv. " + level + "]");
     }

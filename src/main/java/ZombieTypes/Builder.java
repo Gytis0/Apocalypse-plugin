@@ -3,15 +3,21 @@ package ZombieTypes;
 import Enums.PathType;
 import Enums.ZombieTypes;
 import Model.Goals.Goal;
+import Model.Goals.GoalMoveTo;
 import Model.Goals.GoalReachTarget;
 import Utility.RepeatableTask;
 import ZombieSkills.BlockBuilding;
+import ZombieSkills.CustomPathSearch;
 import ZombieSkills.TargetReachabilityDetection;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Queue;
+import java.util.Random;
 
 
 public class Builder extends Regular {
@@ -89,9 +95,22 @@ public class Builder extends Regular {
         }
 
         if (pathIndex == 0) {
-            goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToLedge, target, 10 * pathLevel, pathCycle, PathType.NEAREST_LEDGE));
+            List<Block> ledges = CustomPathSearch.getNearestLedges(target, 10 * pathLevel, pathCycle);
+            Block startPos = null, endPos = null;
+            Collections.shuffle(ledges, new Random(System.currentTimeMillis()));
+
+            for (Block b : ledges) {
+                startPos = CustomPathSearch.findLocationForPathBuilding(b.getLocation(), zombie);
+                if (startPos != null) {
+                    endPos = b;
+                    break;
+                }
+            }
+
+            goalManager.addGoal(new GoalMoveTo(zombie, startPos.getLocation(), true));
+            goalManager.addGoal(new GoalReachTarget(blockBuilding.setStraightPathToBlock, startPos.getLocation(), endPos.getLocation(), PathType.NEAREST_LEDGE));
         } else if (pathIndex == 1) {
-            goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToLedge, target, 10 * pathLevel, pathCycle, PathType.FIRST_OBSTACLE));
+            // to first obstacle
         }
     }
 }

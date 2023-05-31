@@ -35,8 +35,8 @@ public class GoalMoveTo extends Goal {
 
     @Override
     public void run() {
-        Bukkit.getLogger().info("MOVING goal is in action");
-
+        Bukkit.getLogger().info("MOVING goal to " + locationGoal + " is in action");
+        Bukkit.getLogger().info("The distance is: " + (entity.getLocation().distance(locationGoal)));
         if (entity.getLocation().distance(locationGoal) < 1) isCompleted = true;
         else entity.getPathfinder().moveTo(locationGoal);
 

@@ -2,6 +2,7 @@ package Enums;
 
 public enum PathType {
     FIRST_OBSTACLE,
-    STRAIGHT,
-    NEAREST_LEDGE
+    STRAIGHT_LINE,
+    NEAREST_LEDGE,
+    RAYS
 }

@@ -1,20 +1,28 @@
 package ZombieTypes;
 
+import Enums.PathType;
 import Enums.ZombieTypes;
+import Model.Goals.Goal;
+import Model.Goals.GoalReachTarget;
+import Utility.RepeatableTask;
 import ZombieSkills.BlockMining;
 import ZombieSkills.TargetReachabilityDetection;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
-import Utility.RepeatableTask;
 
-public class Miner extends Regular{
+import java.util.Queue;
+
+public class Miner extends Regular {
 
     //Skills
     TargetReachabilityDetection targetReachabilityDetection;
     BlockMining blockMining;
 
+    // AI
+    int pathIndex = 0;
+    int pathLevel = 1;
+    int pathCycle = 0;
 
     public Miner(Location tempLoc, LivingEntity target, int level) {
         super(tempLoc, target, level);
@@ -24,60 +32,64 @@ public class Miner extends Regular{
 
         zombieType = ZombieTypes.MINER;
 
-        targetReachabilityDetection = new TargetReachabilityDetection(zombie, pathfinder, target);
-        blockMining = new BlockMining(zombie, pathfinder, world, inventory, activeInventorySlot);
+        targetReachabilityDetection = new TargetReachabilityDetection(zombie, target);
+        blockMining = new BlockMining(zombie, world, level, inventory, activeInventorySlot);
     }
 
     @Override
-    protected void update(){
+    protected void update() {
         cycle++;
 
         clearIfInvalid();
 
+        // If there are goals to do, do them first
+        if (goalManager.doGoals()) return;
+
         // If there are blocks to mine, mine them
-        if(blockMining.trigger()){
+        if (blockMining.trigger()) {
             blockMining.action();
             return;
         }
 
         // If the target is reachable, do not bother with the mining logic
-        if(!blockMining.isBreaking() && targetReachabilityDetection.trigger() && cycle > 5){
+        if (!blockMining.isBreaking() && targetReachabilityDetection.trigger() && cycle > 5) {
             targetReachabilityDetection.action();
 
-            if(targetReachabilityDetection.getIsTargetReachable()) {
-                blockMining.removeNextPathBlock();
+            if (targetReachabilityDetection.getIsTargetReachable()) {
+                Bukkit.getLogger().info("Player IS reachable.");
                 return;
             }
-        }
-        else return;
+        } else return;
 
-        if(blockMining.getNextPathBlock() != null){
-            zombie.getPathfinder().moveTo(blockMining.getNextPathBlock().getLocation());
-        }
-        else{
-            zombie.setTarget(target);
+        Bukkit.getLogger().info("Player IS NOT reachable");
+
+        Queue<Goal> fails = goalManager.getMostRecentFails();
+        GoalReachTarget goal;
+
+        for (Goal g : fails) {
+            try {
+                goal = (GoalReachTarget) g;
+            } catch (ClassCastException e) {
+                continue;
+            }
+
+            if (goal.getPathType() == PathType.NEAREST_LEDGE) {
+                if (pathLevel < 3) pathLevel++;
+                else {
+                    pathLevel = 1;
+                    pathIndex++;
+                }
+            } else if (goal.getPathType() == PathType.FIRST_OBSTACLE) {
+                pathLevel = 1;
+                pathIndex = 0;
+                cycle++;
+            }
         }
 
-        // If the player at the same Y level, mine straight to it
-        double heightDifference = target.getLocation().getY() - zombie.getLocation().getY();
-        if(Math.abs(heightDifference) <= 0.25){
-            zombie.setCustomName(ChatColor.AQUA + "Setting mining STRAIGHT");
-            blockMining.mineStraightTo(target);
-            return;
-        }
+        if (pathIndex == 0) {
 
-        // If the player is above, try to make a path to it
-        if (heightDifference > 0.25){
-            zombie.setCustomName(ChatColor.AQUA + "Setting mining UP");
-            blockMining.mineUpTo(target);
-            return;
-        }
-
-        // If the player is below, try to make a path to it
-        if(heightDifference < -0.25){
-            zombie.setCustomName(ChatColor.AQUA + "Setting mining DOWN");
-            blockMining.mineDownTo(target);
-            return;
+        } else if (pathIndex == 1) {
+            // to first obstacle
         }
     }
 }

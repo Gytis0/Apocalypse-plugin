@@ -2,7 +2,6 @@ package ZombieTypes;
 
 import Enums.ZombieTypes;
 import Utility.RepeatableTask;
-import com.destroystokyo.paper.entity.Pathfinder;
 import logic.GoalManager;
 import logic.Stats;
 import org.bukkit.Bukkit;
@@ -25,7 +24,6 @@ public class Regular implements Listener {
     protected int level;
 
     // AI
-    protected Pathfinder pathfinder;
     protected GoalManager goalManager;
 
     List<ItemStack> inventory;
@@ -78,7 +76,6 @@ public class Regular implements Listener {
 
         setName(target.getName());
         zombie.setCanPickupItems(false);
-        pathfinder = zombie.getPathfinder();
     }
 
     protected void clearIfInvalid() {

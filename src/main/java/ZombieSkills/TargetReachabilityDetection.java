@@ -14,9 +14,9 @@ public class TargetReachabilityDetection implements Skill {
 
     boolean isTargetReachable = true;
 
-    public TargetReachabilityDetection(Zombie zombie, Pathfinder pathfinder, LivingEntity target) {
+    public TargetReachabilityDetection(Zombie zombie, LivingEntity target) {
         this.zombie = zombie;
-        this.pathfinder = pathfinder;
+        this.pathfinder = zombie.getPathfinder();
         this.target = target;
     }
 

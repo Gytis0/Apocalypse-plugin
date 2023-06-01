@@ -15,10 +15,9 @@ import java.util.Queue;
 
 
 public class Builder extends Regular {
-
     // Skills
-    BlockBuilding blockBuilding;
     TargetReachabilityDetection targetReachabilityDetection;
+    BlockBuilding blockBuilding;
 
     // AI
     int pathIndex = 0;
@@ -33,8 +32,8 @@ public class Builder extends Regular {
 
         zombieType = ZombieTypes.BUILDER;
 
-        blockBuilding = new BlockBuilding(zombie, pathfinder, world, inventory, activeInventorySlot);
-        targetReachabilityDetection = new TargetReachabilityDetection(zombie, pathfinder, target);
+        blockBuilding = new BlockBuilding(zombie, world, level, inventory, activeInventorySlot);
+        targetReachabilityDetection = new TargetReachabilityDetection(zombie, target);
     }
 
     @Override

@@ -33,9 +33,9 @@ public class BlockBuilding implements Skill {
 
     public ReachTarget setPathToTargetLedge = this::setPathToTargetLedge;
 
-    public BlockBuilding(Zombie zombie, Pathfinder pathfinder, World world, List<ItemStack> inventory, int activeInventorySlot) {
+    public BlockBuilding(Zombie zombie, World world, int level, List<ItemStack> inventory, int activeInventorySlot) {
         this.zombie = zombie;
-        this.pathfinder = pathfinder;
+        this.pathfinder = zombie.getPathfinder();
         this.world = world;
         this.inventory = inventory;
         this.activeInventorySlot = activeInventorySlot;

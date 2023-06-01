@@ -83,7 +83,7 @@ public class Regular implements Listener {
 
     protected void clearIfInvalid() {
         if (zombie.isDead() || !zombie.isValid()) {
-            Bukkit.getLogger().info("Cancelling task {" + updateTask.getId() + "}, because the zombie is dead or invalid");
+            Bukkit.getLogger().warning("Cancelling task {" + updateTask.getId() + "}, because the zombie is dead or invalid");
             Bukkit.getScheduler().cancelTask(updateTask.getId());
 
             Stats.reduceZombieCount();

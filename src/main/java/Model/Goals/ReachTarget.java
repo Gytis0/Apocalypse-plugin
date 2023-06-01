@@ -1,8 +1,8 @@
 package Model.Goals;
 
-import org.bukkit.Location;
+import org.bukkit.entity.LivingEntity;
 
 @FunctionalInterface
 public interface ReachTarget {
-    boolean run(Location start, Location end);
+    boolean run(LivingEntity origin, LivingEntity target, int level, int index);
 }

@@ -9,6 +9,7 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -264,9 +265,10 @@ public class CustomPathSearch {
     }
 
     @Nullable
-    public static Block findLocationForPathBuilding(Location targetLoc, LivingEntity builder) {
+    public static Block findLocationForPathBuildingUp(Location targetLoc, LivingEntity builder) {
         double smallestDistance = 9999;
         double pathDegrees = -0.7;
+
         Block result = null;
         List<Block> possibleResults = new ArrayList<>();
         List<Vector> vectors = Arrays.asList(new Vector(0, pathDegrees, -1), new Vector(1, pathDegrees, 0), new Vector(0, pathDegrees, 1), new Vector(-1, pathDegrees, 0));
@@ -335,7 +337,7 @@ public class CustomPathSearch {
         return blocks;
     }
 
-    public static List<Block> getPathStraightLine(Location originLoc, Location targetLoc) {
+    public static List<Block> getPathStraightLine(@NotNull Location originLoc, @NotNull Location targetLoc) {
         double xLength = Math.abs(originLoc.getX() - targetLoc.getX());
         double yLength = Math.abs(originLoc.getY() - targetLoc.getY());
         double zLength = Math.abs(originLoc.getZ() - targetLoc.getZ());
@@ -385,12 +387,16 @@ public class CustomPathSearch {
             Bukkit.getLogger().info(b.getLocation().toString());
         }
 
-        if (isPathTooSteep(blocks)) return null;
+        if (!isPathWalkable(blocks)) return null;
 
         return blocks;
     }
 
     // booleans
+    public static boolean isPathWalkable(List<Block> path) {
+        return !isPathTooSteep(path) && isPathClear(path);
+    }
+
     public static boolean isPathClear(List<Block> path) {
         Block botBlock, midBlock, topBlock;
         for (Block block : path) {
@@ -435,7 +441,13 @@ public class CustomPathSearch {
     }
 
     public static boolean isTargetReachable(LivingEntity origin, Location target) {
-        Mob mob = (Mob) origin;
+        Mob mob;
+        // Sometimes this function is called for a player, in which case it should be skipped or returned as successful
+        try {
+            mob = (Mob) origin;
+        } catch (ClassCastException e) {
+            return true;
+        }
         Location finalPoint = mob.getPathfinder().findPath(target).getFinalPoint();
         if (finalPoint != null) {
             return finalPoint.distance(target) <= 1;

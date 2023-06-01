@@ -392,6 +392,41 @@ public class CustomPathSearch {
         return blocks;
     }
 
+    // MODIFY a path
+
+    public static List<Block> widenStraightPath(List<Block> path, int range) {
+        Block start = path.get(0), end = path.get(path.size() - 1);
+
+        int xd = Math.abs(end.getX() - start.getX());
+        int zd = Math.abs(end.getZ() - start.getZ());
+
+        List<BlockFace> directions;
+        if (xd > zd) directions = Arrays.asList(BlockFace.NORTH, BlockFace.SOUTH);
+        else directions = Arrays.asList(BlockFace.WEST, BlockFace.EAST);
+
+        int size = path.size() * 3;
+        Block block;
+        for (int i = 0; i < size; i += 3) {
+            block = path.get(i);
+            for (BlockFace d : directions) {
+                path.add(i + 1, block.getRelative(d));
+            }
+        }
+
+        return path;
+    }
+
+    public static List<Block> cleanUpPath(List<Block> path) {
+        for (int i = 0; i < path.size(); i++) {
+            if (!path.get(i).isReplaceable()) {
+                path.remove(i);
+                i--;
+            }
+        }
+
+        return path;
+    }
+
     // booleans
     public static boolean isPathWalkable(List<Block> path) {
         return !isPathTooSteep(path) && isPathClear(path);

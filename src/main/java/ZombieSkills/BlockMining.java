@@ -68,7 +68,6 @@ public class BlockMining implements Skill {
         inventory.add(new ItemStack(Material.WOODEN_PICKAXE));
     }
 
-    // Public
     public void mineStraightTo(LivingEntity target) {
         Block topBlock, botBlock;
 

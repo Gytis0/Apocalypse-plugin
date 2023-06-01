@@ -82,6 +82,8 @@ public class BlockBuilding implements Skill {
             path = new ArrayList<>();
         } else {
             Bukkit.getLogger().info("Set path from straight line");
+            path = CustomPathSearch.widenStraightPath(path, 1);
+            path = CustomPathSearch.cleanUpPath(path);
             return true;
         }
 
@@ -113,6 +115,8 @@ public class BlockBuilding implements Skill {
             if (path == null) {
                 path = new ArrayList<>();
             } else {
+                path = CustomPathSearch.widenStraightPath(path, 1);
+                path = CustomPathSearch.cleanUpPath(path);
                 return true;
             }
         }

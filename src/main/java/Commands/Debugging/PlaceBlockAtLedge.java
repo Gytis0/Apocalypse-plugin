@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import static ZombieSkills.CustomPathSearch.getNearestLedge;
+import static ZombieSkills.CustomPathSearch.findNearestLedge;
 
 public class PlaceBlockAtLedge implements TabExecutor {
 
@@ -29,7 +29,7 @@ public class PlaceBlockAtLedge implements TabExecutor {
             obstacles = Integer.parseInt(args[1]);
         }
 
-        Block ledge = getNearestLedge((Player) sender, range, obstacles);
+        Block ledge = findNearestLedge((Player) sender, range, obstacles);
 
         if (ledge != null) {
             ledge.setType(Material.GLASS);

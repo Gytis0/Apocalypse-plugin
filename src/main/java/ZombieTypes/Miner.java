@@ -3,12 +3,14 @@ package ZombieTypes;
 import Enums.PathType;
 import Enums.ZombieTypes;
 import Model.Goals.Goal;
+import Model.Goals.GoalMoveTo;
 import Model.Goals.GoalReachTarget;
 import Utility.RepeatableTask;
 import ZombieSkills.BlockMining;
 import ZombieSkills.TargetReachabilityDetection;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 
 import java.util.Queue;
@@ -19,9 +21,11 @@ public class Miner extends Regular {
     TargetReachabilityDetection targetReachabilityDetection;
     BlockMining blockMining;
 
+    Block focusBlock;
+
     // AI
-    int pathIndex = 0;
-    int pathLevel = 1;
+    int pathIndex = 1, maxIndex = 3;
+    int pathLevel = 1, maxLevel = 3;
     int pathCycle = 0;
 
     public Miner(Location tempLoc, LivingEntity target, int level) {
@@ -43,7 +47,10 @@ public class Miner extends Regular {
         clearIfInvalid();
 
         // If there are goals to do, do them first
-        if (goalManager.doGoals()) return;
+        if (!goalManager.areGoalsEmpty()) {
+            Object obj = goalManager.doGoals();
+            if (obj instanceof Block) focusBlock = (Block) obj;
+        }
 
         // If there are blocks to mine, mine them
         if (blockMining.trigger()) {
@@ -64,32 +71,46 @@ public class Miner extends Regular {
         Bukkit.getLogger().info("Player IS NOT reachable");
 
         Queue<Goal> fails = goalManager.getMostRecentFails();
-        GoalReachTarget goal;
+        if (fails.size() == 0) Bukkit.getLogger().warning("No fails occured");
+        for (Goal g : fails) {
+            Bukkit.getLogger().warning("Failed a goal: " + g.getGoalType());
+        }
 
         for (Goal g : fails) {
-            try {
-                goal = (GoalReachTarget) g;
-            } catch (ClassCastException e) {
-                continue;
-            }
-
-            if (goal.getPathType() == PathType.NEAREST_LEDGE) {
-                if (pathLevel < 3) pathLevel++;
-                else {
-                    pathLevel = 1;
-                    pathIndex++;
-                }
-            } else if (goal.getPathType() == PathType.FIRST_OBSTACLE) {
-                pathLevel = 1;
-                pathIndex = 0;
-                cycle++;
-            }
+            if (g instanceof GoalReachTarget) increaseIndex();
         }
 
-        if (pathIndex == 0) {
-
-        } else if (pathIndex == 1) {
-            // to first obstacle
+        Bukkit.getLogger().info("Current level / index / cycle: " + pathLevel + " / " + pathIndex + " / " + pathCycle);
+        if (focusBlock != null) {
+            goalManager.addGoal(new GoalMoveTo(zombie, focusBlock.getLocation()));
+            focusBlock = null;
+            Bukkit.getLogger().info("Added move to focus block goal");
+        } else if (pathIndex == 1 && goalManager.areGoalsEmpty()) {
+            goalManager.addGoal(new GoalReachTarget(blockMining.searchForFirstObstacle, zombie, target, pathLevel, pathIndex, PathType.FIRST_OBSTACLE));
+            Bukkit.getLogger().info("Added firstObstacle goal");
+        } else if (pathIndex == 2 && goalManager.areGoalsEmpty()) {
+            goalManager.addGoal(new GoalReachTarget(blockMining.searchForStraightPath, zombie, target, pathLevel, pathIndex, PathType.STRAIGHT_LINE));
+            Bukkit.getLogger().info("Added straightLine goal");
+        } else if (pathIndex == 3 && goalManager.areGoalsEmpty()) {
+            goalManager.addGoal(new GoalReachTarget(blockMining.searchFor4raysUp, zombie, target, pathLevel, pathIndex, PathType.RAYS_UP));
+            Bukkit.getLogger().info("Added raysUp goal");
         }
+
+
+    }
+
+    protected void increaseLevel() {
+        if (pathLevel == maxLevel) {
+            pathLevel = 1;
+            increaseIndex();
+        } else pathLevel++;
+    }
+
+    protected void increaseIndex() {
+        if (pathIndex == maxIndex) {
+            pathLevel = 1;
+            pathIndex = 1;
+            pathCycle++;
+        } else pathIndex++;
     }
 }

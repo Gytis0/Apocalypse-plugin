@@ -1,6 +1,9 @@
 package Utility;
 
-import org.bukkit.*;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
@@ -37,10 +40,10 @@ public class GameUtils {
         final int wood = 2, stone = 4, iron = 6, diamond = 8, netherite = 9, gold = 12;
         float multiplier, hardness = block.getType().getHardness();
         if (block.isValidTool(tool)) {
-            Bukkit.getLogger().info(tool.getType() + " is valid for breaking: " + block.getType());
+            //Bukkit.getLogger().info(tool.getType() + " is valid for breaking: " + block.getType());
             hardness *= 1.5f;
         } else {
-            Bukkit.getLogger().info(tool.getType() + " is not valid for breaking: " + block.getType());
+            //Bukkit.getLogger().info(tool.getType() + " is not valid for breaking: " + block.getType());
             hardness *= 5f;
             return hardness;
         }

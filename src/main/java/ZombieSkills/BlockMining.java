@@ -1,5 +1,6 @@
 package ZombieSkills;
 
+import Model.Goals.ReachTarget;
 import Utility.DelayedTask;
 import Utility.GameUtils;
 import Utility.RepeatableTask;
@@ -20,6 +21,7 @@ import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static ZombieSkills.CustomPathSearch.getEntityFloorBlock;
@@ -31,22 +33,21 @@ public class BlockMining implements Skill {
     List<ItemStack> inventory;
     int activeInventorySlot;
 
-    List<Block> blocksToBreak;
-    Block focusBlock;
+    List<Block> blocksToBreak = new ArrayList<>();
     boolean breaking = false;
     double mineRange = 4;
 
     // 4 Rays
     double wallSearchRange = 10;
-    List<BlockFace> directions;
-    Block nextPathBlock;
-    boolean firstGrade = true;
+    List<BlockFace> directions = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
 
-    double lastDistanceToFocusBlock = -1;
-
-    PotionEffect standStill;
+    PotionEffect standStill = new PotionEffect(PotionEffectType.SLOW, 60, 255);
 
     int breakingTaskId, breakTaskId;
+
+    public ReachTarget searchForFirstObstacle = this::searchForFirstObstacle;
+    public ReachTarget searchForStraightPath = this::searchForStraightPath;
+    public ReachTarget searchFor4raysUp = this::searchFor4raysUp;
 
     public BlockMining(Zombie zombie, World world, int level, List<ItemStack> inventory, int activeInventorySlot) {
         this.zombie = zombie;
@@ -55,17 +56,75 @@ public class BlockMining implements Skill {
         this.inventory = inventory;
         this.activeInventorySlot = activeInventorySlot;
 
-        blocksToBreak = new ArrayList<>();
-        directions = new ArrayList<>();
-
-        directions.add(BlockFace.NORTH);
-        directions.add(BlockFace.EAST);
-        directions.add(BlockFace.SOUTH);
-        directions.add(BlockFace.WEST);
-
-        standStill = new PotionEffect(PotionEffectType.SLOW, 60, 255);
-
         inventory.add(new ItemStack(Material.WOODEN_PICKAXE));
+    }
+
+    public Object searchForFirstObstacle(LivingEntity origin, LivingEntity target, int level, int index) {
+        Block obstacle = CustomPathSearch.findFirstObstacleTo(origin, target);
+        if (CustomPathSearch.isBlockReachable(origin, obstacle, mineRange)) {
+            blocksToBreak.add(obstacle);
+            return obstacle;
+        }
+
+        Bukkit.getLogger().warning("First obstacle failed");
+        return null;
+    }
+
+    public Object searchForStraightPath(LivingEntity origin, LivingEntity target, int level, int index) {
+        Block topBlock = findBlockBetween(origin, target, true);
+        Block botBlock = findBlockBetween(origin, target, false);
+        boolean success = false;
+
+        if (topBlock == null && botBlock == null) {
+            Bukkit.getLogger().warning("Straight path failed");
+            return null;
+        }
+
+        if (topBlock != null && CustomPathSearch.isBlockReachable(origin, topBlock, mineRange)) {
+            blocksToBreak.add(topBlock);
+            success = true;
+        }
+        if (botBlock != null && CustomPathSearch.isBlockReachable(origin, botBlock, mineRange)) {
+            blocksToBreak.add(botBlock);
+            success = true;
+        }
+
+        if (!success) return null;
+
+        if (botBlock != null) return botBlock;
+        else return topBlock;
+    }
+
+    public Object searchFor4raysUp(LivingEntity origin, LivingEntity target, int level, int index) {
+        List<Block> possibleBlocks = new ArrayList<>();
+        for (BlockFace d : directions) {
+            RayTraceResult result = world.rayTraceBlocks(origin.getLocation().add(0, 1, 0), d.getDirection(), 4 * level);
+            if (result != null && result.getHitBlock() != null) possibleBlocks.add(result.getHitBlock());
+        }
+
+        if (possibleBlocks.size() == 0) {
+            Bukkit.getLogger().warning("rays up failed");
+            return null;
+        }
+
+        double smallestDistance = 9999;
+        Block blockToMine = null;
+        for (Block b : possibleBlocks) {
+            if (b.getLocation().distance(target.getLocation()) < smallestDistance && CustomPathSearch.isBlockReachable(origin, b, mineRange)) {
+                smallestDistance = b.getLocation().distance(target.getLocation());
+                blockToMine = b;
+            }
+        }
+
+        blocksToBreak.add(blockToMine);
+
+        Block tempBlock = blockToMine.getRelative(BlockFace.UP);
+        if (!tempBlock.isPassable()) blocksToBreak.add(tempBlock);
+
+        tempBlock = tempBlock.getRelative(BlockFace.UP);
+        if (!tempBlock.isPassable()) blocksToBreak.add(tempBlock);
+
+        return blockToMine;
     }
 
     public boolean isBreaking() {
@@ -73,7 +132,7 @@ public class BlockMining implements Skill {
     }
 
     // find a block that's between two entities' with a range
-    protected Block findBlockBetween(LivingEntity origin, LivingEntity target, World world, boolean eyeLevel) {
+    protected Block findBlockBetween(LivingEntity origin, LivingEntity target, boolean eyeLevel) {
         double yOffset = 1.5;
         if (eyeLevel) {
             yOffset += 1.1;
@@ -98,34 +157,35 @@ public class BlockMining implements Skill {
         }
     }
 
-    protected void startBreakingBlock(ItemStack tool) {
+    protected boolean startBreakingBlock(ItemStack tool, Block block) {
+        if (zombie.getLocation().distance(block.getLocation()) > mineRange) return false;
+
         breaking = true;
-        float speed = GameUtils.getBlockDestroySpeed(focusBlock, tool);
+        float timeToBreak = GameUtils.getBlockDestroySpeed(block, tool);
         zombie.addPotionEffect(standStill);
 
         breakingTaskId = new RepeatableTask(() -> {
-            GameUtils.playBreakBlockParticles(world, focusBlock, 3);
+            GameUtils.playBreakBlockParticles(world, block, 3);
             zombie.swingMainHand();
-            world.playSound(focusBlock.getLocation(), focusBlock.getBlockSoundGroup().getHitSound(), 1, 1);
-        }, 0, 1).getId();
+            world.playSound(block.getLocation(), block.getBlockSoundGroup().getHitSound(), 1, 1);
+        }, 0, 0.5f).getId();
 
         breakTaskId = new DelayedTask(() -> {
-            destroyBlock(focusBlock, tool);
-        }, speed).getId();
+            destroyBlock(block, tool);
+        }, timeToBreak).getId();
+
+        return true;
     }
 
     protected void stopBreakingBlocks() {
         breaking = false;
-        firstGrade = true;
         zombie.removePotionEffect(PotionEffectType.SLOW);
         blocksToBreak.clear();
         Bukkit.getScheduler().cancelTask(breakingTaskId);
         Bukkit.getScheduler().cancelTask(breakTaskId);
-        lastDistanceToFocusBlock = -1;
     }
 
     protected void destroyBlock(Block block, ItemStack tool) {
-        focusBlock = null;
         breaking = false;
 
         if (tool != null && block.isValidTool(tool)) {
@@ -138,31 +198,20 @@ public class BlockMining implements Skill {
         world.playSound(block.getLocation(), block.getBlockSoundGroup().getBreakSound(), 1, 1);
         blocksToBreak.remove(0);
         zombie.removePotionEffect(PotionEffectType.SLOW);
-        lastDistanceToFocusBlock = -1;
-
-        firstGrade = true;
-    }
-
-    public Block getNextPathBlock() {
-        return nextPathBlock;
-    }
-
-    public void removeNextPathBlock() {
-        nextPathBlock = null;
     }
 
     @Override
     public boolean trigger() {
-        if (blocksToBreak.size() > 0) {
-            focusBlock = blocksToBreak.get(0);
-
-            return true;
-        } else return false;
+        return blocksToBreak.size() > 0;
     }
 
     @Override
     public void action() {
-
+        if (!isBreaking()) {
+            if (!startBreakingBlock(inventory.get(activeInventorySlot), blocksToBreak.get(0))) {
+                pathfinder.moveTo(blocksToBreak.get(0).getLocation());
+            }
+        }
     }
 
     @Override

@@ -18,6 +18,7 @@ import Utility.RepeatableTask;
 import logic.Settings;
 import logic.ZombieSpawner;
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
 import org.bukkit.World;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -47,7 +48,7 @@ public final class Apocalypse extends JavaPlugin {
         new WorldHandler(this, settings.getDifficulty());
 
         zombieSpawner = new ZombieSpawner(overworld, settings, this);
-
+        overworld.setGameRule(GameRule.DO_INSOMNIA, false);
         setupCommands();
     }
 

@@ -2,6 +2,7 @@ package Model.Goals;
 
 import Enums.GoalType;
 import Enums.PathType;
+import Model.StatusAnswer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.LivingEntity;
 
@@ -9,7 +10,6 @@ public class GoalReachTarget extends Goal {
     ReachTarget reachTarget;
     int level, index;
     LivingEntity origin, target;
-
     PathType pathType;
 
     public GoalReachTarget(ReachTarget reachTarget, LivingEntity origin, LivingEntity target, int level, int index, PathType pathType) {
@@ -58,31 +58,29 @@ public class GoalReachTarget extends Goal {
 
     @Override
     public void run() {
-        Bukkit.getLogger().info("REACHTARGET goal is in action. LEVEL / INDEX: [" + level + "] / [" + index + "]");
-        isFailed = !reachTarget.run(origin, target, level, index);
+        Object result = reachTarget.run(origin, target, level, index);
 
-        if (!isFailed) isCompleted = true;
+        if (result == null) status = StatusAnswer.FAILED;
+        else {
+            answer = result;
+            status = StatusAnswer.SUCCESS;
+        }
 
         if (lifetime > timeoutTime) {
             Bukkit.getLogger().info("This goal is timed out");
-            isFailed = true;
+            status = StatusAnswer.TIMED_OUT;
             return;
         }
         lifetime++;
     }
 
     @Override
-    public boolean isCompleted() {
-        return isCompleted;
-    }
-
-    @Override
-    public boolean isFailed() {
-        return isFailed;
-    }
-
-    @Override
     public boolean isMandatory() {
         return isMandatory;
+    }
+
+    @Override
+    public Object getAnswer() {
+        return answer;
     }
 }

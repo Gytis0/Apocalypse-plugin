@@ -20,8 +20,8 @@ public class Builder extends Regular {
     BlockBuilding blockBuilding;
 
     // AI
-    int pathIndex = 0;
-    int pathLevel = 1;
+    int pathIndex = 1, maxIndex = 1;
+    int pathLevel = 1, maxLevel = 5;
     int pathCycle = 0;
 
     public Builder(Location tempLoc, LivingEntity target, int level) {
@@ -43,8 +43,9 @@ public class Builder extends Regular {
         clearIfInvalid();
 
         // If there are goals to do, do them first
-        if (goalManager.doGoals()) return;
-
+        if (!goalManager.areGoalsEmpty()) {
+            Object obj = goalManager.doGoals();
+        }
         // If there is a path to build, build it
         if (blockBuilding.trigger()) {
             blockBuilding.action();
@@ -75,22 +76,29 @@ public class Builder extends Regular {
             }
 
             if (goal.getPathType() == PathType.NEAREST_LEDGE) {
-                if (pathLevel < 3) pathLevel++;
-                else {
-                    pathLevel = 1;
-                    pathIndex++;
-                }
-            } else if (goal.getPathType() == PathType.FIRST_OBSTACLE) {
-                pathLevel = 1;
-                pathIndex = 0;
-                cycle++;
+                increaseLevel();
             }
         }
 
-        if (pathIndex == 0) {
+        Bukkit.getLogger().info("Current level / index / cycle: " + pathLevel + " / " + pathIndex + " / " + pathCycle);
+
+        if (pathIndex == 1) {
             goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToTargetLedge, zombie, target, pathLevel, pathIndex, PathType.NEAREST_LEDGE));
-        } else if (pathIndex == 1) {
-            // to first obstacle
         }
+    }
+
+    protected void increaseLevel() {
+        if (pathLevel == maxLevel) {
+            pathLevel = 1;
+            increaseIndex();
+        } else pathLevel++;
+    }
+
+    protected void increaseIndex() {
+        if (pathIndex == maxIndex) {
+            pathLevel = 1;
+            pathIndex = 1;
+            pathCycle++;
+        } else pathIndex++;
     }
 }

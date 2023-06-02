@@ -1,8 +1,8 @@
 package ZombieTypes;
 
 import Enums.ZombieTypes;
+import Model.Goals.GoalManager;
 import Utility.RepeatableTask;
-import logic.GoalManager;
 import logic.Stats;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;

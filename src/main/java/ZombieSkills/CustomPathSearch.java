@@ -2,11 +2,13 @@ package ZombieSkills;
 
 import Model.Point;
 import Utility.Utils;
+import com.destroystokyo.paper.entity.Pathfinder;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -88,7 +90,7 @@ public class CustomPathSearch {
     }
 
     @Nullable
-    public static Block getEntityRoofBlock(LivingEntity entity, int range) {
+    public static Block findEntityRoofBlock(LivingEntity entity, int range) {
         Block startBlock = getEntityFloorBlock(entity);
         Block tempBlock = startBlock.getRelative(BlockFace.UP);
 
@@ -104,7 +106,7 @@ public class CustomPathSearch {
     }
 
     @Nullable
-    public static List<Block> getNearestLedges(LivingEntity entity, int range, int obstaclesToIgnore) {
+    public static List<Block> findNearestLedges(LivingEntity entity, int range, int obstaclesToIgnore) {
         List<Block> checkedBlocks = new ArrayList<>();
         Queue<Point> blocksToCheck = new LinkedList<>();
         Set<Block> ledges = new HashSet<>();
@@ -178,7 +180,7 @@ public class CustomPathSearch {
     }
 
     @Nullable
-    public static Block getNearestLedge(LivingEntity entity, int range, int obstaclesToIgnore) {
+    public static Block findNearestLedge(LivingEntity entity, int range, int obstaclesToIgnore) {
         List<Block> checkedBlocks = new ArrayList<>();
         Queue<Point> blocksToCheck = new LinkedList<>();
 
@@ -246,13 +248,13 @@ public class CustomPathSearch {
 
 
     @Nullable
-    public static Block getFirstObstacleTo(LivingEntity origin, LivingEntity entity) {
-        List<Block> customPath = getPathTopBlocks(origin, entity);
-        return getFirstObstacleOf(customPath);
+    public static Block findFirstObstacleTo(LivingEntity origin, LivingEntity entity) {
+        List<Block> customPath = findPathTopBlocks(origin, entity);
+        return findFirstObstacleOf(customPath);
     }
 
     @Nullable
-    public static Block getFirstObstacleOf(List<Block> path) {
+    public static Block findFirstObstacleOf(List<Block> path) {
         int y = path.get(0).getY();
         for (Block block : path) {
             if (block.getY() - y > 1) {
@@ -282,7 +284,7 @@ public class CustomPathSearch {
         }
 
         for (Block b : possibleResults) {
-            if (b.getLocation().distance(builder.getLocation()) < smallestDistance && CustomPathSearch.isTargetReachable(builder, b.getLocation()) && CustomPathSearch.isBlockClear(b)) {
+            if (b.getLocation().distance(builder.getLocation()) < smallestDistance && CustomPathSearch.isLocationReachable(builder, b.getLocation()) && CustomPathSearch.isBlockClear(b)) {
                 smallestDistance = b.getLocation().distance(builder.getLocation());
                 result = b;
                 Bukkit.getLogger().info("new block assigned: " + result);
@@ -297,7 +299,7 @@ public class CustomPathSearch {
     }
 
     // GET a path
-    public static List<Block> getPathTopBlocks(LivingEntity origin, LivingEntity target) {
+    public static List<Block> findPathTopBlocks(LivingEntity origin, LivingEntity target) {
         Location originLoc = getEntityFloorBlock(origin).getLocation();
         Location targetLoc = getEntityFloorBlock(target).getLocation();
 
@@ -337,7 +339,7 @@ public class CustomPathSearch {
         return blocks;
     }
 
-    public static List<Block> getPathStraightLine(@NotNull Location originLoc, @NotNull Location targetLoc) {
+    public static List<Block> findPathStraightLine(@NotNull Location originLoc, @NotNull Location targetLoc) {
         double xLength = Math.abs(originLoc.getX() - targetLoc.getX());
         double yLength = Math.abs(originLoc.getY() - targetLoc.getY());
         double zLength = Math.abs(originLoc.getZ() - targetLoc.getZ());
@@ -475,19 +477,25 @@ public class CustomPathSearch {
         return false;
     }
 
-    public static boolean isTargetReachable(LivingEntity origin, Location target) {
-        Mob mob;
-        // Sometimes this function is called for a player, in which case it should be skipped or returned as successful
-        try {
-            mob = (Mob) origin;
-        } catch (ClassCastException e) {
-            return true;
-        }
-        Location finalPoint = mob.getPathfinder().findPath(target).getFinalPoint();
-        if (finalPoint != null) {
-            return finalPoint.distance(target) <= 1;
-        } else {
-            return false;
-        }
+    public static boolean isLocationReachable(LivingEntity origin, Location target) {
+        if (origin instanceof Player) return true;
+
+        Mob mob = (Mob) origin;
+        Pathfinder.PathResult path = mob.getPathfinder().findPath(target);
+        Location closestLocation;
+
+        if (path == null) return false;
+        closestLocation = path.getFinalPoint();
+
+        if (closestLocation == null) return false;
+
+        return closestLocation.distance(target) <= 1;
+    }
+
+    public static boolean isBlockReachable(LivingEntity origin, Block block, double range) {
+        Mob mob = (Mob) origin;
+        Location finalPoint = mob.getPathfinder().findPath(block.getLocation()).getFinalPoint();
+        if (finalPoint != null && finalPoint.distance(block.getLocation()) <= range) return true;
+        else return false;
     }
 }

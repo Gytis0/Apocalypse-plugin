@@ -48,11 +48,11 @@ public class BlockBuilding implements Skill {
         Bukkit.getLogger().info("Setting path to FIRST OBSTACLE...");
         this.target = target;
 
-        path = getPathTopBlocks(zombie, target);
+        path = findPathTopBlocks(zombie, target);
 
-        Block obstacle = getFirstObstacleOf(path);
+        Block obstacle = findFirstObstacleOf(path);
 
-        path = getPathStraightLine(getEntityFloorBlock(zombie).getLocation(), obstacle.getLocation());
+        path = findPathStraightLine(getEntityFloorBlock(zombie).getLocation(), obstacle.getLocation());
         if (path != null) {
             Bukkit.getLogger().info("Set path to first obstacle");
             return true;
@@ -64,7 +64,7 @@ public class BlockBuilding implements Skill {
     }
 
     public boolean setPathToTargetLedge(LivingEntity origin, LivingEntity target, int level, int index) {
-        List<Block> playerLedges = CustomPathSearch.getNearestLedges(target, level * 10, index);
+        List<Block> playerLedges = CustomPathSearch.findNearestLedges(target, level * 10, index - 1);
         Block closestLedge = null;
         double closestDistance = 9999;
         double temp;
@@ -77,7 +77,7 @@ public class BlockBuilding implements Skill {
         }
 
         // Path from current position
-        path = getPathStraightLine(CustomPathSearch.getEntityFloorBlock(origin).getLocation(), closestLedge.getLocation());
+        path = findPathStraightLine(CustomPathSearch.getEntityFloorBlock(origin).getLocation(), closestLedge.getLocation());
         if (path == null) {
             path = new ArrayList<>();
         } else {
@@ -99,7 +99,7 @@ public class BlockBuilding implements Skill {
                 }
             }
         } else {
-            startBlock = CustomPathSearch.getNearestLedge(zombie, level * 5, 0);
+            startBlock = CustomPathSearch.findNearestLedge(zombie, level * 5, 0);
 
             closestDistance = 9999;
             for (Block b : playerLedges) {
@@ -111,7 +111,7 @@ public class BlockBuilding implements Skill {
         }
 
         if (startBlock != null) {
-            path = getPathStraightLine(startBlock.getLocation(), endBlock.getLocation());
+            path = findPathStraightLine(startBlock.getLocation(), endBlock.getLocation());
             if (path == null) {
                 path = new ArrayList<>();
             } else {
@@ -143,7 +143,6 @@ public class BlockBuilding implements Skill {
             lastPlacedBlock = null;
             return false;
         }
-
     }
 
     @Override

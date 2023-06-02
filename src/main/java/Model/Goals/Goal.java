@@ -1,14 +1,15 @@
 package Model.Goals;
 
 import Enums.GoalType;
+import Model.StatusAnswer;
 
 public abstract class Goal implements IGoal {
-    boolean isCompleted = false;
-    boolean isFailed = false;
     boolean isMandatory = false;
     int lifetime = 0;
-    int timeoutTime = 30;
+    int timeoutTime = 15;
     GoalType goalType;
+    Object answer;
+    StatusAnswer status = null;
 
     public Goal() {
     }
@@ -25,16 +26,6 @@ public abstract class Goal implements IGoal {
     }
 
     @Override
-    public boolean isCompleted() {
-        return false;
-    }
-
-    @Override
-    public boolean isFailed() {
-        return false;
-    }
-
-    @Override
     public boolean isMandatory() {
         return false;
     }
@@ -43,4 +34,6 @@ public abstract class Goal implements IGoal {
     public GoalType getGoalType() {
         return goalType;
     }
+
+
 }

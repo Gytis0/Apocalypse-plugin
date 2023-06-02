@@ -3,6 +3,7 @@ package ZombieTypes;
 import Enums.ZombieTypes;
 import Model.Goals.GoalManager;
 import Utility.RepeatableTask;
+import apocalypse.apocalypse.Apocalypse;
 import logic.Stats;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -10,7 +11,9 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Zombie;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.ArrayList;
@@ -32,9 +35,13 @@ public class Regular implements Listener {
     public Zombie zombie;
     public ZombieTypes zombieType;
 
+    boolean playerIsReachable = true;
+
     int cycle = 0;
 
-    public Regular(Location tempLoc, LivingEntity target, int level) {
+    public Regular(Apocalypse apocalypse, Location tempLoc, LivingEntity target, int level) {
+        Bukkit.getPluginManager().registerEvents(this, apocalypse);
+
         this.level = level;
         zombieType = ZombieTypes.REGULAR;
         updateTask = new RepeatableTask(this::update, 0, 2f);
@@ -74,7 +81,7 @@ public class Regular implements Listener {
         this.target = target;
         zombie.setTarget(target);
 
-        setName(target.getName());
+        setName();
         zombie.setCanPickupItems(false);
     }
 
@@ -87,8 +94,18 @@ public class Regular implements Listener {
         }
     }
 
-    protected void setName(String name) {
+    protected void setName() {
         zombie.setCustomNameVisible(true);
-        zombie.setCustomName(ChatColor.GRAY + zombieType.toString().toUpperCase() + ChatColor.WHITE + " | " + name + ChatColor.GOLD + " [Lv. " + level + "]");
+        ChatColor classColor = ChatColor.WHITE;
+        if (zombieType == ZombieTypes.REGULAR) classColor = ChatColor.GREEN;
+        else if (zombieType == ZombieTypes.MINER) classColor = ChatColor.DARK_RED;
+        else if (zombieType == ZombieTypes.BUILDER) classColor = ChatColor.YELLOW;
+
+        zombie.setCustomName(classColor + zombieType.toString().toUpperCase() + ChatColor.WHITE + " || " + target.getName() + " [Lv. " + level + "]");
+    }
+
+    @EventHandler
+    public void onEntityTarget(EntityTargetEvent event) {
+        if (!playerIsReachable) event.setCancelled(true);
     }
 }

@@ -1,10 +1,7 @@
 package ZombieSkills;
 
 import Model.Goals.ReachTarget;
-import Utility.DelayedTask;
-import Utility.GameUtils;
-import Utility.RepeatableTask;
-import Utility.Utils;
+import Utility.*;
 import com.destroystokyo.paper.entity.Pathfinder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -24,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static ZombieSkills.CustomPathSearch.getEntityFloorBlock;
+import static Utility.Pathing.getEntityFloorBlock;
 
 public class BlockMining implements Skill {
     Zombie zombie;
@@ -35,7 +32,7 @@ public class BlockMining implements Skill {
 
     List<Block> blocksToBreak = new ArrayList<>();
     boolean breaking = false;
-    double mineRange = 4;
+    double mineRange = 5;
 
     // 4 Rays
     double wallSearchRange = 10;
@@ -60,8 +57,8 @@ public class BlockMining implements Skill {
     }
 
     public Object searchForFirstObstacle(LivingEntity origin, LivingEntity target, int level, int index) {
-        Block obstacle = CustomPathSearch.findFirstObstacleTo(origin, target);
-        if (CustomPathSearch.isBlockReachable(origin, obstacle, mineRange)) {
+        Block obstacle = Pathing.findFirstObstacleTo(origin, target);
+        if (obstacle != null && Pathing.isBlockReachable(origin, obstacle, mineRange)) {
             blocksToBreak.add(obstacle);
             return obstacle;
         }
@@ -80,11 +77,11 @@ public class BlockMining implements Skill {
             return null;
         }
 
-        if (topBlock != null && CustomPathSearch.isBlockReachable(origin, topBlock, mineRange)) {
+        if (topBlock != null && Pathing.isBlockReachable(origin, topBlock, mineRange)) {
             blocksToBreak.add(topBlock);
             success = true;
         }
-        if (botBlock != null && CustomPathSearch.isBlockReachable(origin, botBlock, mineRange)) {
+        if (botBlock != null && Pathing.isBlockReachable(origin, botBlock, mineRange)) {
             blocksToBreak.add(botBlock);
             success = true;
         }
@@ -102,6 +99,7 @@ public class BlockMining implements Skill {
             if (result != null && result.getHitBlock() != null) possibleBlocks.add(result.getHitBlock());
         }
 
+
         if (possibleBlocks.size() == 0) {
             Bukkit.getLogger().warning("rays up failed");
             return null;
@@ -110,7 +108,7 @@ public class BlockMining implements Skill {
         double smallestDistance = 9999;
         Block blockToMine = null;
         for (Block b : possibleBlocks) {
-            if (b.getLocation().distance(target.getLocation()) < smallestDistance && CustomPathSearch.isBlockReachable(origin, b, mineRange)) {
+            if (b.getLocation().distance(target.getLocation()) < smallestDistance && Pathing.isBlockReachable(origin, b, mineRange)) {
                 smallestDistance = b.getLocation().distance(target.getLocation());
                 blockToMine = b;
             }
@@ -208,7 +206,11 @@ public class BlockMining implements Skill {
     @Override
     public void action() {
         if (!isBreaking()) {
+            Bukkit.getLogger().info("Not breaking");
             if (!startBreakingBlock(inventory.get(activeInventorySlot), blocksToBreak.get(0))) {
+                Bukkit.getLogger().info("Can't reach the block, moving to " + blocksToBreak.get(0).getLocation());
+                Bukkit.getLogger().info("The distance to block is: " + zombie.getLocation().distance(blocksToBreak.get(0).getLocation()));
+
                 pathfinder.moveTo(blocksToBreak.get(0).getLocation());
             }
         }

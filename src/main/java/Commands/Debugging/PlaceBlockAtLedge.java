@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-import static ZombieSkills.CustomPathSearch.findNearestLedge;
+import static Utility.Pathing.findNearestLedge;
 
 public class PlaceBlockAtLedge implements TabExecutor {
 

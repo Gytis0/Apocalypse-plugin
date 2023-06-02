@@ -2,7 +2,7 @@ package Model.Goals;
 
 import Enums.GoalType;
 import Model.StatusAnswer;
-import ZombieSkills.CustomPathSearch;
+import Utility.Pathing;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Mob;
@@ -37,14 +37,14 @@ public class GoalMoveTo extends Goal {
 
     @Override
     public void run() {
-        if (!CustomPathSearch.isLocationReachable(entity, locationGoal)) {
+        if (!Pathing.isLocationReachable(entity, locationGoal)) {
             //Bukkit.getLogger().warning("Location is not reachable.");
             status = StatusAnswer.FAILED;
             return;
         }
 
         Bukkit.getLogger().info("MOVING goal to " + locationGoal + " is in action");
-        //Bukkit.getLogger().info("The distance is: " + (entity.getLocation().distance(locationGoal)));
+        Bukkit.getLogger().info("The distance is: " + (entity.getLocation().distance(locationGoal)));
         if (entity.getLocation().distance(locationGoal) < 1) status = StatusAnswer.SUCCESS;
         else {
             entity.getPathfinder().moveTo(locationGoal);

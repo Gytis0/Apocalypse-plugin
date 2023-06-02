@@ -1,6 +1,7 @@
 package ZombieSkills;
 
 import Model.Goals.ReachTarget;
+import Utility.Pathing;
 import com.destroystokyo.paper.entity.Pathfinder;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -15,7 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ZombieSkills.CustomPathSearch.*;
+import static Utility.Pathing.*;
 
 public class BlockBuilding implements Skill {
     Zombie zombie;
@@ -64,7 +65,7 @@ public class BlockBuilding implements Skill {
     }
 
     public boolean setPathToTargetLedge(LivingEntity origin, LivingEntity target, int level, int index) {
-        List<Block> playerLedges = CustomPathSearch.findNearestLedges(target, level * 10, index - 1);
+        List<Block> playerLedges = Pathing.findNearestLedges(target, level * 10, index - 1);
         Block closestLedge = null;
         double closestDistance = 9999;
         double temp;
@@ -77,13 +78,13 @@ public class BlockBuilding implements Skill {
         }
 
         // Path from current position
-        path = findPathStraightLine(CustomPathSearch.getEntityFloorBlock(origin).getLocation(), closestLedge.getLocation());
+        path = findPathStraightLine(Pathing.getEntityFloorBlock(origin).getLocation(), closestLedge.getLocation());
         if (path == null) {
             path = new ArrayList<>();
         } else {
             Bukkit.getLogger().info("Set path from straight line");
-            path = CustomPathSearch.widenStraightPath(path, 1);
-            path = CustomPathSearch.cleanUpPath(path);
+            path = Pathing.widenStraightPath(path, 1);
+            path = Pathing.cleanUpPath(path);
             return true;
         }
 
@@ -91,7 +92,7 @@ public class BlockBuilding implements Skill {
         Block startBlock = null, endBlock = null;
         if (target.getLocation().getY() >= origin.getLocation().getY()) {
             for (Block b : playerLedges) {
-                startBlock = CustomPathSearch.findLocationForPathBuildingUp(b.getLocation(), zombie);
+                startBlock = Pathing.findLocationForPathBuildingUp(b.getLocation(), zombie);
                 if (startBlock != null) {
                     Bukkit.getLogger().info("Set path from BELOW to ABOVE angles");
                     endBlock = b;
@@ -99,7 +100,7 @@ public class BlockBuilding implements Skill {
                 }
             }
         } else {
-            startBlock = CustomPathSearch.findNearestLedge(zombie, level * 5, 0);
+            startBlock = Pathing.findNearestLedge(zombie, level * 5, 0);
 
             closestDistance = 9999;
             for (Block b : playerLedges) {
@@ -115,8 +116,8 @@ public class BlockBuilding implements Skill {
             if (path == null) {
                 path = new ArrayList<>();
             } else {
-                path = CustomPathSearch.widenStraightPath(path, 1);
-                path = CustomPathSearch.cleanUpPath(path);
+                path = Pathing.widenStraightPath(path, 1);
+                path = Pathing.cleanUpPath(path);
                 return true;
             }
         }

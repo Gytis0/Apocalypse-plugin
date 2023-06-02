@@ -7,9 +7,12 @@ import Model.Goals.GoalReachTarget;
 import Utility.RepeatableTask;
 import ZombieSkills.BlockBuilding;
 import ZombieSkills.TargetReachabilityDetection;
+import apocalypse.apocalypse.Apocalypse;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.entity.EntityTargetEvent;
 
 import java.util.Queue;
 
@@ -24,13 +27,14 @@ public class Builder extends Regular {
     int pathLevel = 1, maxLevel = 5;
     int pathCycle = 0;
 
-    public Builder(Location tempLoc, LivingEntity target, int level) {
-        super(tempLoc, target, level);
+    public Builder(Apocalypse apocalypse, Location tempLoc, LivingEntity target, int level) {
+        super(apocalypse, tempLoc, target, level);
 
         Bukkit.getScheduler().cancelTask(updateTask.getId());
         updateTask = new RepeatableTask(this::update, 0, 1f);
 
         zombieType = ZombieTypes.BUILDER;
+        setName();
 
         blockBuilding = new BlockBuilding(zombie, world, level, inventory, activeInventorySlot);
         targetReachabilityDetection = new TargetReachabilityDetection(zombie, target);
@@ -59,11 +63,13 @@ public class Builder extends Regular {
 
             if (targetReachabilityDetection.getIsTargetReachable()) {
                 Bukkit.getLogger().info("Player IS reachable.");
+                playerIsReachable = true;
                 return;
             }
         } else return;
 
         Bukkit.getLogger().info("Player IS NOT reachable");
+        playerIsReachable = false;
 
         Queue<Goal> fails = goalManager.getMostRecentFails();
         GoalReachTarget goal;
@@ -100,5 +106,10 @@ public class Builder extends Regular {
             pathIndex = 1;
             pathCycle++;
         } else pathIndex++;
+    }
+
+    @EventHandler
+    public void onEntityTarget(EntityTargetEvent event) {
+        if (!playerIsReachable) event.setCancelled(true);
     }
 }

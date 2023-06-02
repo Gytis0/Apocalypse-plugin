@@ -49,7 +49,6 @@ public class GoalManager {
     }
 
     public Queue<Goal> getMostRecentFails() {
-        Bukkit.getLogger().info("Returning all fails: " + recentFailedGoals);
         Queue<Goal> result = new ArrayDeque<>(recentFailedGoals);
         recentFailedGoals.clear();
         return result;
@@ -57,5 +56,9 @@ public class GoalManager {
 
     public boolean areGoalsEmpty() {
         return goals.size() == 0;
+    }
+
+    public int getGoalSize() {
+        return goals.size();
     }
 }

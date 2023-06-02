@@ -40,11 +40,17 @@ public class TargetReachabilityDetection implements Skill {
         Pathfinder.PathResult path = pathfinder.findPath(target);
         Location closestLocation;
 
-        if (path == null) return;
+        if (path == null) {
+            isTargetReachable = false;
+            return;
+        }
         closestLocation = path.getFinalPoint();
 
-        if (closestLocation == null) return;
-        isTargetReachable = closestLocation.distance(target.getLocation()) <= 1.5;
+        if (closestLocation == null) {
+            isTargetReachable = false;
+            return;
+        }
+        isTargetReachable = closestLocation.distance(target.getLocation()) <= 1.0;
     }
 
     @Override

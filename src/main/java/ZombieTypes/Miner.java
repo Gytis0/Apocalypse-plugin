@@ -8,6 +8,7 @@ import Model.Goals.GoalReachTarget;
 import Utility.RepeatableTask;
 import ZombieSkills.BlockMining;
 import ZombieSkills.TargetReachabilityDetection;
+import apocalypse.apocalypse.Apocalypse;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
@@ -28,13 +29,13 @@ public class Miner extends Regular {
     int pathLevel = 1, maxLevel = 3;
     int pathCycle = 0;
 
-    public Miner(Location tempLoc, LivingEntity target, int level) {
-        super(tempLoc, target, level);
-
+    public Miner(Apocalypse apocalypse, Location tempLoc, LivingEntity target, int level) {
+        super(apocalypse, tempLoc, target, level);
         Bukkit.getScheduler().cancelTask(updateTask.getId());
         updateTask = new RepeatableTask(this::update, 0, 1f);
 
         zombieType = ZombieTypes.MINER;
+        setName();
 
         targetReachabilityDetection = new TargetReachabilityDetection(zombie, target);
         blockMining = new BlockMining(zombie, world, level, inventory, activeInventorySlot);
@@ -48,12 +49,17 @@ public class Miner extends Regular {
 
         // If there are goals to do, do them first
         if (!goalManager.areGoalsEmpty()) {
+            Bukkit.getLogger().info("There are " + goalManager.getGoalSize() + " goals.");
             Object obj = goalManager.doGoals();
-            if (obj instanceof Block) focusBlock = (Block) obj;
+            if (obj instanceof Block) {
+                Bukkit.getLogger().info("Found a new focus block.");
+                focusBlock = (Block) obj;
+            }
         }
 
         // If there are blocks to mine, mine them
         if (blockMining.trigger()) {
+            Bukkit.getLogger().info("There are blocks to mine");
             blockMining.action();
             return;
         }
@@ -64,17 +70,15 @@ public class Miner extends Regular {
 
             if (targetReachabilityDetection.getIsTargetReachable()) {
                 Bukkit.getLogger().info("Player IS reachable.");
+                playerIsReachable = true;
                 return;
             }
         } else return;
 
         Bukkit.getLogger().info("Player IS NOT reachable");
+        playerIsReachable = false;
 
         Queue<Goal> fails = goalManager.getMostRecentFails();
-        if (fails.size() == 0) Bukkit.getLogger().warning("No fails occured");
-        for (Goal g : fails) {
-            Bukkit.getLogger().warning("Failed a goal: " + g.getGoalType());
-        }
 
         for (Goal g : fails) {
             if (g instanceof GoalReachTarget) increaseIndex();
@@ -95,22 +99,26 @@ public class Miner extends Regular {
             goalManager.addGoal(new GoalReachTarget(blockMining.searchFor4raysUp, zombie, target, pathLevel, pathIndex, PathType.RAYS_UP));
             Bukkit.getLogger().info("Added raysUp goal");
         }
-
-
     }
 
     protected void increaseLevel() {
         if (pathLevel == maxLevel) {
-            pathLevel = 1;
             increaseIndex();
         } else pathLevel++;
     }
 
     protected void increaseIndex() {
         if (pathIndex == maxIndex) {
+            increaseCycle();
+        } else {
             pathLevel = 1;
-            pathIndex = 1;
-            pathCycle++;
-        } else pathIndex++;
+            pathIndex++;
+        }
+    }
+
+    protected void increaseCycle() {
+        pathLevel = 1;
+        pathIndex = 1;
+        pathCycle++;
     }
 }

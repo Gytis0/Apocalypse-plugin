@@ -20,7 +20,6 @@ public class GoalManager {
             if (recentFailedGoals.size() > 5) recentFailedGoals.poll();
             Goal goal = goals.peek();
 
-            Bukkit.getLogger().info("Running a goal...");
             goal.run();
 
             if (goal.status == StatusAnswer.SUCCESS) {
@@ -29,13 +28,13 @@ public class GoalManager {
                 return goal.getAnswer();
             } else if (goal.status == StatusAnswer.RUNNING) {
                 Bukkit.getLogger().info("Goal is still running...");
-            } else if (goal.isMandatory() && goal.status == StatusAnswer.FAILED) {
+            } else if (goal.isMandatory() && (goal.status == StatusAnswer.FAILED || goal.status == StatusAnswer.TIMED_OUT)) {
                 Bukkit.getLogger().info("Clearing the queue, because one of the mandatory goals failed.");
                 goals.clear();
                 recentFailedGoals.add(goal);
                 return goal.getAnswer();
-            } else if (goal.status == StatusAnswer.FAILED) {
-                Bukkit.getLogger().warning("Removing a goal, because it has failed.");
+            } else if (goal.status == StatusAnswer.FAILED || goal.status == StatusAnswer.TIMED_OUT) {
+                Bukkit.getLogger().warning("Removing a goal, because it has failed / timed out.");
                 goals.poll();
                 recentFailedGoals.add(goal);
                 return goal.getAnswer();

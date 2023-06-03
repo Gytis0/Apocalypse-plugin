@@ -5,6 +5,7 @@ import Enums.ZombieTypes;
 import Model.Goals.Goal;
 import Model.Goals.GoalMoveTo;
 import Model.Goals.GoalReachTarget;
+import Model.Goals.GoalStandStill;
 import Utility.RepeatableTask;
 import ZombieSkills.BlockMining;
 import ZombieSkills.TargetReachabilityDetection;
@@ -12,8 +13,10 @@ import apocalypse.apocalypse.Apocalypse;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 
+import java.util.ArrayDeque;
 import java.util.Queue;
 
 public class Miner extends Regular {
@@ -22,12 +25,14 @@ public class Miner extends Regular {
     TargetReachabilityDetection targetReachabilityDetection;
     BlockMining blockMining;
 
-    Block focusBlock;
-
     // AI
     int pathIndex = 1, maxIndex = 3;
     int pathLevel = 1, maxLevel = 3;
     int pathCycle = 0;
+
+    // Broadcast
+    Queue<Block> path = new ArrayDeque<>();
+    boolean movedToFront = true;
 
     public Miner(Apocalypse apocalypse, Location tempLoc, LivingEntity target, int level) {
         super(apocalypse, tempLoc, target, level);
@@ -38,7 +43,7 @@ public class Miner extends Regular {
         setName();
 
         targetReachabilityDetection = new TargetReachabilityDetection(zombie, target);
-        blockMining = new BlockMining(zombie, world, level, inventory, activeInventorySlot);
+        blockMining = new BlockMining(zombie, world, level, inventory, activeInventorySlot, path);
     }
 
     @Override
@@ -49,17 +54,16 @@ public class Miner extends Regular {
 
         // If there are goals to do, do them first
         if (!goalManager.areGoalsEmpty()) {
-            Bukkit.getLogger().info("There are " + goalManager.getGoalSize() + " goals.");
             Object obj = goalManager.doGoals();
             if (obj instanceof Block) {
-                Bukkit.getLogger().info("Found a new focus block.");
-                focusBlock = (Block) obj;
+                path.add(((Block) obj).getRelative(BlockFace.DOWN));
+                movedToFront = false;
             }
         }
 
         // If there are blocks to mine, mine them
         if (blockMining.trigger()) {
-            Bukkit.getLogger().info("There are blocks to mine");
+            //Bukkit.getLogger().info("There are blocks to mine");
             blockMining.action();
             return;
         }
@@ -85,19 +89,26 @@ public class Miner extends Regular {
         }
 
         Bukkit.getLogger().info("Current level / index / cycle: " + pathLevel + " / " + pathIndex + " / " + pathCycle);
-        if (focusBlock != null) {
-            goalManager.addGoal(new GoalMoveTo(zombie, focusBlock.getLocation()));
-            focusBlock = null;
-            Bukkit.getLogger().info("Added move to focus block goal");
+        if (!path.isEmpty() && !movedToFront) {
+            goalManager.addGoal(new GoalMoveTo(zombie, path.peek().getLocation()));
+            goalManager.addGoal(new GoalStandStill(zombie, 5));
+            movedToFront = true;
         } else if (pathIndex == 1 && goalManager.areGoalsEmpty()) {
             goalManager.addGoal(new GoalReachTarget(blockMining.searchForFirstObstacle, zombie, target, pathLevel, pathIndex, PathType.FIRST_OBSTACLE));
             Bukkit.getLogger().info("Added firstObstacle goal");
         } else if (pathIndex == 2 && goalManager.areGoalsEmpty()) {
-            goalManager.addGoal(new GoalReachTarget(blockMining.searchForStraightPath, zombie, target, pathLevel, pathIndex, PathType.STRAIGHT_LINE));
-            Bukkit.getLogger().info("Added straightLine goal");
+            if (isTargetRelativelyTheSameY(zombie, target)) {
+                Bukkit.getLogger().info("Added straightLine goal");
+                goalManager.addGoal(new GoalReachTarget(blockMining.searchForStraightPath, zombie, target, pathLevel, pathIndex, PathType.STRAIGHT_LINE));
+            } else increaseIndex();
         } else if (pathIndex == 3 && goalManager.areGoalsEmpty()) {
-            goalManager.addGoal(new GoalReachTarget(blockMining.searchFor4raysUp, zombie, target, pathLevel, pathIndex, PathType.RAYS_UP));
-            Bukkit.getLogger().info("Added raysUp goal");
+            if (target.getLocation().getY() > zombie.getLocation().getY()) {
+                goalManager.addGoal(new GoalReachTarget(blockMining.searchFor4raysUp, zombie, target, pathLevel, pathIndex, PathType.RAYS_UP));
+                Bukkit.getLogger().info("Added raysUp goal");
+            } else {
+                goalManager.addGoal(new GoalReachTarget(blockMining.searchFor4raysDown, zombie, target, pathLevel, pathIndex, PathType.RAYS_DOWN));
+                Bukkit.getLogger().info("Added raysDown goal");
+            }
         }
     }
 
@@ -120,5 +131,12 @@ public class Miner extends Regular {
         pathLevel = 1;
         pathIndex = 1;
         pathCycle++;
+    }
+
+    // Later change this. Make it to see if the angle between them is steep or not.
+    // If it's not steep, do straight line. If it is steep, do the advanced algos
+    protected boolean isTargetRelativelyTheSameY(LivingEntity origin, LivingEntity target) {
+        Bukkit.getLogger().info("Difference is: " + Math.abs(target.getLocation().getY() - origin.getLocation().getY()));
+        return Math.abs(target.getLocation().getY() - origin.getLocation().getY()) < 2;
     }
 }

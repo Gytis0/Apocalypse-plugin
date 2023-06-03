@@ -1,12 +1,10 @@
 package ZombieSkills;
 
+import Model.FoundBlock;
 import Model.Goals.ReachTarget;
 import Utility.*;
 import com.destroystokyo.paper.entity.Pathfinder;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
@@ -17,9 +15,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static Utility.Pathing.getEntityFloorBlock;
 
@@ -34,6 +30,8 @@ public class BlockMining implements Skill {
     boolean breaking = false;
     double mineRange = 5;
 
+    Queue<Block> currentPath = new ArrayDeque<>();
+
     // 4 Rays
     double wallSearchRange = 10;
     List<BlockFace> directions = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
@@ -45,20 +43,22 @@ public class BlockMining implements Skill {
     public ReachTarget searchForFirstObstacle = this::searchForFirstObstacle;
     public ReachTarget searchForStraightPath = this::searchForStraightPath;
     public ReachTarget searchFor4raysUp = this::searchFor4raysUp;
+    public ReachTarget searchFor4raysDown = this::searchFor4raysDown;
 
-    public BlockMining(Zombie zombie, World world, int level, List<ItemStack> inventory, int activeInventorySlot) {
+    public BlockMining(Zombie zombie, World world, int level, List<ItemStack> inventory, int activeInventorySlot, Queue<Block> path) {
         this.zombie = zombie;
         this.pathfinder = zombie.getPathfinder();
         this.world = world;
         this.inventory = inventory;
         this.activeInventorySlot = activeInventorySlot;
+        this.currentPath = path;
 
         inventory.add(new ItemStack(Material.WOODEN_PICKAXE));
     }
 
     public Object searchForFirstObstacle(LivingEntity origin, LivingEntity target, int level, int index) {
         Block obstacle = Pathing.findFirstObstacleTo(origin, target);
-        if (obstacle != null && Pathing.isBlockReachable(origin, obstacle, mineRange)) {
+        if (obstacle != null && !currentPath.contains(obstacle) && Pathing.isBlockReachable(origin, obstacle, mineRange)) {
             blocksToBreak.add(obstacle);
             return obstacle;
         }
@@ -77,11 +77,11 @@ public class BlockMining implements Skill {
             return null;
         }
 
-        if (topBlock != null && Pathing.isBlockReachable(origin, topBlock, mineRange)) {
+        if (topBlock != null && !currentPath.contains(topBlock) && Pathing.isBlockReachable(origin, topBlock, mineRange)) {
             blocksToBreak.add(topBlock);
             success = true;
         }
-        if (botBlock != null && Pathing.isBlockReachable(origin, botBlock, mineRange)) {
+        if (botBlock != null && !currentPath.contains(botBlock) && Pathing.isBlockReachable(origin, botBlock, mineRange)) {
             blocksToBreak.add(botBlock);
             success = true;
         }
@@ -108,7 +108,7 @@ public class BlockMining implements Skill {
         double smallestDistance = 9999;
         Block blockToMine = null;
         for (Block b : possibleBlocks) {
-            if (b.getLocation().distance(target.getLocation()) < smallestDistance && Pathing.isBlockReachable(origin, b, mineRange)) {
+            if (!currentPath.contains(b) && b.getLocation().distance(target.getLocation()) < smallestDistance && Pathing.isBlockReachable(origin, b, mineRange)) {
                 smallestDistance = b.getLocation().distance(target.getLocation());
                 blockToMine = b;
             }
@@ -123,6 +123,46 @@ public class BlockMining implements Skill {
         if (!tempBlock.isPassable()) blocksToBreak.add(tempBlock);
 
         return blockToMine;
+    }
+
+    public Object searchFor4raysDown(LivingEntity origin, LivingEntity target, int level, int index) {
+        double smallestDistance = 9999;
+        double pathDegrees = -0.91;
+
+        FoundBlock result = null;
+        List<FoundBlock> possibleResults = new ArrayList<>();
+        List<Vector> vectors = Arrays.asList(new Vector(0, pathDegrees, -1), new Vector(1, pathDegrees, 0), new Vector(0, pathDegrees, 1), new Vector(-1, pathDegrees, 0));
+
+        for (Vector v : vectors) {
+            RayTraceResult ray = world.rayTrace(zombie.getLocation().add(0, 1, 0), v, 32, FluidCollisionMode.NEVER, true, 1, null);
+            if (ray != null && ray.getHitBlock() != null) {
+                possibleResults.add(new FoundBlock(ray.getHitBlock(), ray.getHitBlockFace()));
+                //Bukkit.getLogger().info("Found a ray: " + ray.getHitBlock());
+            }
+        }
+
+        possibleResults.removeIf(b -> !Pathing.isBlockReachable(zombie, b.getBlock(), mineRange));
+        possibleResults.removeIf(b -> currentPath.contains(b));
+
+        if (possibleResults.size() == 0) return null;
+
+        for (FoundBlock fb : possibleResults) {
+            if (fb.getBlock().getLocation().distance(target.getLocation()) < smallestDistance) {
+                result = fb;
+                smallestDistance = fb.getBlock().getLocation().distance(target.getLocation());
+            }
+        }
+
+        blocksToBreak.add(result.getBlock());
+
+        if (result.getFaceTo() == BlockFace.UP) return result.getBlock();
+
+        if (!result.getBlock().getRelative(BlockFace.UP).isPassable())
+            blocksToBreak.add(result.getBlock().getRelative(BlockFace.UP));
+        if (!result.getBlock().getRelative(BlockFace.DOWN).isPassable())
+            blocksToBreak.add(result.getBlock().getRelative(BlockFace.DOWN));
+
+        return result.getBlock();
     }
 
     public boolean isBreaking() {
@@ -200,19 +240,24 @@ public class BlockMining implements Skill {
 
     @Override
     public boolean trigger() {
+        Bukkit.getLogger().info("Current path is: ");
+        for (Block b : currentPath) {
+            Bukkit.getLogger().info(b.getLocation().toString());
+        }
         return blocksToBreak.size() > 0;
     }
 
     @Override
     public void action() {
         if (!isBreaking()) {
-            Bukkit.getLogger().info("Not breaking");
             if (!startBreakingBlock(inventory.get(activeInventorySlot), blocksToBreak.get(0))) {
                 Bukkit.getLogger().info("Can't reach the block, moving to " + blocksToBreak.get(0).getLocation());
                 Bukkit.getLogger().info("The distance to block is: " + zombie.getLocation().distance(blocksToBreak.get(0).getLocation()));
 
                 pathfinder.moveTo(blocksToBreak.get(0).getLocation());
             }
+        } else {
+            Bukkit.getLogger().info("Breaking " + blocksToBreak.get(0).getLocation());
         }
     }
 

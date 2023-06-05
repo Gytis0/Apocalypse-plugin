@@ -73,14 +73,4 @@ public class GoalReachTarget extends Goal {
         }
         lifetime++;
     }
-
-    @Override
-    public boolean isMandatory() {
-        return isMandatory;
-    }
-
-    @Override
-    public Object getAnswer() {
-        return answer;
-    }
 }

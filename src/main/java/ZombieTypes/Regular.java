@@ -44,7 +44,8 @@ public class Regular implements Listener {
 
         this.level = level;
         zombieType = ZombieTypes.REGULAR;
-        updateTask = new RepeatableTask(this::update, 0, 2f);
+
+        updateTask = new RepeatableTask(this::update, 0, 5f);
 
         spawnZombie(tempLoc, target);
 

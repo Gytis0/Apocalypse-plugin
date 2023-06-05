@@ -5,6 +5,7 @@ import Model.StatusAnswer;
 import Utility.Pathing;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Mob;
 
 public class GoalMoveTo extends Goal {
@@ -42,10 +43,17 @@ public class GoalMoveTo extends Goal {
             status = StatusAnswer.FAILED;
             return;
         }
+        Block locationBlock = locationGoal.getBlock();
+        Block entityBlock = Pathing.findEntityFloorBlock(entity);
 
-        Bukkit.getLogger().info("MOVING goal to " + locationGoal + " is in action");
-        Bukkit.getLogger().info("The distance is: " + (entity.getLocation().distance(locationGoal)));
-        if (entity.getLocation().distance(locationGoal) < 1.5) status = StatusAnswer.SUCCESS;
+        Bukkit.getLogger().info("MOVING to " + locationGoal);
+        Bukkit.getLogger().info("entity distance " + (entity.getLocation().distance(locationGoal)));
+        Bukkit.getLogger().info("block distance " + (entityBlock.getLocation().distance(locationBlock.getLocation())));
+
+        Bukkit.getLogger().info("entity block " + entityBlock.getLocation());
+        Bukkit.getLogger().info("location block " + locationBlock.getLocation());
+
+        if (entityBlock.equals(locationBlock)) status = StatusAnswer.SUCCESS;
         else {
             entity.getPathfinder().moveTo(locationGoal);
             status = StatusAnswer.RUNNING;
@@ -57,15 +65,5 @@ public class GoalMoveTo extends Goal {
             return;
         }
         lifetime++;
-    }
-
-    @Override
-    public boolean isMandatory() {
-        return isMandatory;
-    }
-
-    @Override
-    public Object getAnswer() {
-        return answer;
     }
 }

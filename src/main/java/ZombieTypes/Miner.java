@@ -2,10 +2,7 @@ package ZombieTypes;
 
 import Enums.PathType;
 import Enums.ZombieTypes;
-import Model.Goals.Goal;
-import Model.Goals.GoalMoveTo;
-import Model.Goals.GoalReachTarget;
-import Model.Goals.GoalStandStill;
+import Model.Goals.*;
 import Utility.RepeatableTask;
 import ZombieSkills.BlockMining;
 import ZombieSkills.TargetReachabilityDetection;
@@ -16,7 +13,8 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 
-import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Queue;
 
 public class Miner extends Regular {
@@ -31,7 +29,7 @@ public class Miner extends Regular {
     int pathCycle = 0;
 
     // Broadcast
-    Queue<Block> path = new ArrayDeque<>();
+    List<Block> path = new ArrayList<>();
     boolean movedToFront = true;
 
     public Miner(Apocalypse apocalypse, Location tempLoc, LivingEntity target, int level) {
@@ -88,26 +86,30 @@ public class Miner extends Regular {
             if (g instanceof GoalReachTarget) increaseIndex();
         }
 
-        Bukkit.getLogger().info("Current level / index / cycle: " + pathLevel + " / " + pathIndex + " / " + pathCycle);
+        //Bukkit.getLogger().info("Current level / index / cycle: " + pathLevel + " / " + pathIndex + " / " + pathCycle);
         if (!path.isEmpty() && !movedToFront) {
-            goalManager.addGoal(new GoalMoveTo(zombie, path.peek().getLocation()));
-            goalManager.addGoal(new GoalStandStill(zombie, 5));
+            goalManager.addGoal(new GoalMoveTo(zombie, path.get(path.size() - 1).getLocation()));
+            goalManager.addGoal(new GoalStandStill(zombie));
             movedToFront = true;
         } else if (pathIndex == 1 && goalManager.areGoalsEmpty()) {
             goalManager.addGoal(new GoalReachTarget(blockMining.searchForFirstObstacle, zombie, target, pathLevel, pathIndex, PathType.FIRST_OBSTACLE));
-            Bukkit.getLogger().info("Added firstObstacle goal");
+            goalManager.addGoal(new GoalMoveFree(zombie));
+            //Bukkit.getLogger().info("Added firstObstacle goal");
         } else if (pathIndex == 2 && goalManager.areGoalsEmpty()) {
             if (isTargetRelativelyTheSameY(zombie, target)) {
-                Bukkit.getLogger().info("Added straightLine goal");
+                //Bukkit.getLogger().info("Added straightLine goal");
                 goalManager.addGoal(new GoalReachTarget(blockMining.searchForStraightPath, zombie, target, pathLevel, pathIndex, PathType.STRAIGHT_LINE));
+                goalManager.addGoal(new GoalMoveFree(zombie));
             } else increaseIndex();
         } else if (pathIndex == 3 && goalManager.areGoalsEmpty()) {
             if (target.getLocation().getY() > zombie.getLocation().getY()) {
                 goalManager.addGoal(new GoalReachTarget(blockMining.searchFor4raysUp, zombie, target, pathLevel, pathIndex, PathType.RAYS_UP));
-                Bukkit.getLogger().info("Added raysUp goal");
+                goalManager.addGoal(new GoalMoveFree(zombie));
+                //Bukkit.getLogger().info("Added raysUp goal");
             } else {
                 goalManager.addGoal(new GoalReachTarget(blockMining.searchFor4raysDown, zombie, target, pathLevel, pathIndex, PathType.RAYS_DOWN));
-                Bukkit.getLogger().info("Added raysDown goal");
+                goalManager.addGoal(new GoalMoveFree(zombie));
+                //Bukkit.getLogger().info("Added raysDown goal");
             }
         }
     }
@@ -136,7 +138,7 @@ public class Miner extends Regular {
     // Later change this. Make it to see if the angle between them is steep or not.
     // If it's not steep, do straight line. If it is steep, do the advanced algos
     protected boolean isTargetRelativelyTheSameY(LivingEntity origin, LivingEntity target) {
-        Bukkit.getLogger().info("Difference is: " + Math.abs(target.getLocation().getY() - origin.getLocation().getY()));
+        //Bukkit.getLogger().info("Difference is: " + Math.abs(target.getLocation().getY() - origin.getLocation().getY()));
         return Math.abs(target.getLocation().getY() - origin.getLocation().getY()) < 2;
     }
 }

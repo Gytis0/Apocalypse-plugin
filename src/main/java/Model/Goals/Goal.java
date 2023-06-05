@@ -21,13 +21,8 @@ public abstract class Goal implements IGoal {
     }
 
     @Override
-    public void run() {
-
-    }
-
-    @Override
     public boolean isMandatory() {
-        return false;
+        return isMandatory;
     }
 
     @Override
@@ -35,5 +30,8 @@ public abstract class Goal implements IGoal {
         return goalType;
     }
 
-
+    @Override
+    public Object getAnswer() {
+        return answer;
+    }
 }

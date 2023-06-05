@@ -1,10 +1,13 @@
 package ZombieSkills;
 
-import Model.FoundBlock;
+import Model.BlockFound;
 import Model.Goals.ReachTarget;
 import Utility.*;
 import com.destroystokyo.paper.entity.Pathfinder;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
@@ -15,9 +18,12 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
 
-import java.util.*;
+import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import static Utility.Pathing.getEntityFloorBlock;
+import static Utility.Pathing.findEntityFloorBlock;
 
 public class BlockMining implements Skill {
     Zombie zombie;
@@ -30,22 +36,22 @@ public class BlockMining implements Skill {
     boolean breaking = false;
     double mineRange = 5;
 
-    Queue<Block> currentPath = new ArrayDeque<>();
+    List<Block> currentPath;
 
     // 4 Rays
-    double wallSearchRange = 10;
     List<BlockFace> directions = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
+    BlockFace recentDirection;
 
     PotionEffect standStill = new PotionEffect(PotionEffectType.SLOW, 60, 255);
 
     int breakingTaskId, breakTaskId;
 
-    public ReachTarget searchForFirstObstacle = this::searchForFirstObstacle;
-    public ReachTarget searchForStraightPath = this::searchForStraightPath;
-    public ReachTarget searchFor4raysUp = this::searchFor4raysUp;
-    public ReachTarget searchFor4raysDown = this::searchFor4raysDown;
+    public ReachTarget searchForFirstObstacle = this::mineFirstObstacle;
+    public ReachTarget searchForStraightPath = this::mineStraightLine;
+    public ReachTarget searchFor4raysUp = this::mineUp;
+    public ReachTarget searchFor4raysDown = this::mineDown;
 
-    public BlockMining(Zombie zombie, World world, int level, List<ItemStack> inventory, int activeInventorySlot, Queue<Block> path) {
+    public BlockMining(Zombie zombie, World world, int level, List<ItemStack> inventory, int activeInventorySlot, List<Block> path) {
         this.zombie = zombie;
         this.pathfinder = zombie.getPathfinder();
         this.world = world;
@@ -53,10 +59,10 @@ public class BlockMining implements Skill {
         this.activeInventorySlot = activeInventorySlot;
         this.currentPath = path;
 
-        inventory.add(new ItemStack(Material.WOODEN_PICKAXE));
+        inventory.add(new ItemStack(Material.NETHERITE_PICKAXE));
     }
 
-    public Object searchForFirstObstacle(LivingEntity origin, LivingEntity target, int level, int index) {
+    public Object mineFirstObstacle(LivingEntity origin, LivingEntity target, int level, int index) {
         Block obstacle = Pathing.findFirstObstacleTo(origin, target);
         if (obstacle != null && !currentPath.contains(obstacle) && Pathing.isBlockReachable(origin, obstacle, mineRange)) {
             blocksToBreak.add(obstacle);
@@ -67,7 +73,7 @@ public class BlockMining implements Skill {
         return null;
     }
 
-    public Object searchForStraightPath(LivingEntity origin, LivingEntity target, int level, int index) {
+    public Object mineStraightLine(LivingEntity origin, LivingEntity target, int level, int index) {
         Block topBlock = findBlockBetween(origin, target, true);
         Block botBlock = findBlockBetween(origin, target, false);
         boolean success = false;
@@ -92,81 +98,92 @@ public class BlockMining implements Skill {
         else return topBlock;
     }
 
-    public Object searchFor4raysUp(LivingEntity origin, LivingEntity target, int level, int index) {
-        List<Block> possibleBlocks = new ArrayList<>();
-        for (BlockFace d : directions) {
-            RayTraceResult result = world.rayTraceBlocks(origin.getLocation().add(0, 1, 0), d.getDirection(), 4 * level);
-            if (result != null && result.getHitBlock() != null) possibleBlocks.add(result.getHitBlock());
-        }
+    public Object mineUp(LivingEntity origin, LivingEntity target, int level, int index) {
+        List<BlockFound> possibleBlocks = searchRayEyeLevel(zombie, recentDirection);
+        if (possibleBlocks == null) return null;
 
+        possibleBlocks.removeIf(b -> currentPath.contains(b));
+        if (possibleBlocks.isEmpty()) return null;
 
-        if (possibleBlocks.size() == 0) {
-            Bukkit.getLogger().warning("rays up failed");
-            return null;
-        }
+        BlockFound tempBlockFound = Utils.findClosestBlockToTarget(possibleBlocks, target);
+        Block tempBlock = tempBlockFound.getBlock();
+        recentDirection = tempBlockFound.getFoundFrom();
 
-        double smallestDistance = 9999;
-        Block blockToMine = null;
-        for (Block b : possibleBlocks) {
-            if (!currentPath.contains(b) && b.getLocation().distance(target.getLocation()) < smallestDistance && Pathing.isBlockReachable(origin, b, mineRange)) {
-                smallestDistance = b.getLocation().distance(target.getLocation());
-                blockToMine = b;
-            }
-        }
-
-        blocksToBreak.add(blockToMine);
-
-        Block tempBlock = blockToMine.getRelative(BlockFace.UP);
-        if (!tempBlock.isPassable()) blocksToBreak.add(tempBlock);
+        blocksToBreak.add(tempBlock);
 
         tempBlock = tempBlock.getRelative(BlockFace.UP);
         if (!tempBlock.isPassable()) blocksToBreak.add(tempBlock);
 
-        return blockToMine;
+        tempBlock = Pathing.findEntityRoofBlock(zombie, 1);
+        if (tempBlock != null && !tempBlock.isPassable()) blocksToBreak.add(tempBlock);
+
+        return tempBlock;
     }
 
-    public Object searchFor4raysDown(LivingEntity origin, LivingEntity target, int level, int index) {
-        double smallestDistance = 9999;
-        double pathDegrees = -0.91;
+    public Object mineDown(LivingEntity origin, LivingEntity target, int level, int index) {
+        List<BlockFound> possibleBlocks = searchDown(origin, recentDirection);
 
-        FoundBlock result = null;
-        List<FoundBlock> possibleResults = new ArrayList<>();
-        List<Vector> vectors = Arrays.asList(new Vector(0, pathDegrees, -1), new Vector(1, pathDegrees, 0), new Vector(0, pathDegrees, 1), new Vector(-1, pathDegrees, 0));
+        if (possibleBlocks == null) return null;
 
-        for (Vector v : vectors) {
-            RayTraceResult ray = world.rayTrace(zombie.getLocation().add(0, 1, 0), v, 32, FluidCollisionMode.NEVER, true, 1, null);
-            if (ray != null && ray.getHitBlock() != null) {
-                possibleResults.add(new FoundBlock(ray.getHitBlock(), ray.getHitBlockFace()));
-                //Bukkit.getLogger().info("Found a ray: " + ray.getHitBlock());
-            }
-        }
+        possibleBlocks.removeIf(b -> currentPath.contains(b));
+        if (possibleBlocks.isEmpty()) return null;
 
-        possibleResults.removeIf(b -> !Pathing.isBlockReachable(zombie, b.getBlock(), mineRange));
-        possibleResults.removeIf(b -> currentPath.contains(b));
+        BlockFound tempBlockFound = Utils.findClosestBlockToTarget(possibleBlocks, target);
+        Block stairBlock = tempBlockFound.getBlock();
+        recentDirection = tempBlockFound.getFoundFrom();
 
-        if (possibleResults.size() == 0) return null;
+        // Do the stair case
+        blocksToBreak.add(stairBlock);
+        Block result = stairBlock;
 
-        for (FoundBlock fb : possibleResults) {
-            if (fb.getBlock().getLocation().distance(target.getLocation()) < smallestDistance) {
-                result = fb;
-                smallestDistance = fb.getBlock().getLocation().distance(target.getLocation());
-            }
-        }
+        stairBlock = stairBlock.getRelative(BlockFace.UP);
+        if (!stairBlock.isPassable()) blocksToBreak.add(stairBlock);
 
-        blocksToBreak.add(result.getBlock());
+        stairBlock = stairBlock.getRelative(BlockFace.UP);
+        if (!stairBlock.isPassable()) blocksToBreak.add(stairBlock);
 
-        if (result.getFaceTo() == BlockFace.UP) return result.getBlock();
-
-        if (!result.getBlock().getRelative(BlockFace.UP).isPassable())
-            blocksToBreak.add(result.getBlock().getRelative(BlockFace.UP));
-        if (!result.getBlock().getRelative(BlockFace.DOWN).isPassable())
-            blocksToBreak.add(result.getBlock().getRelative(BlockFace.DOWN));
-
-        return result.getBlock();
+        return result;
     }
 
     public boolean isBreaking() {
         return breaking;
+    }
+
+    @Nullable
+    public List<BlockFound> searchRayEyeLevel(LivingEntity origin, @Nullable BlockFace ignoreDirection) {
+        List<BlockFound> possibleBlocks = new ArrayList<>();
+        List<BlockFace> currentDirections = new ArrayList<>(directions);
+        if (ignoreDirection != null) {
+            currentDirections.remove(ignoreDirection);
+        }
+
+        for (BlockFace d : currentDirections) {
+            RayTraceResult result = world.rayTraceBlocks(origin.getLocation().add(0, 1, 0), d.getDirection(), 1);
+            if (result != null && result.getHitBlock() != null)
+                possibleBlocks.add(new BlockFound(result.getHitBlock(), d.getOppositeFace()));
+        }
+
+        if (possibleBlocks.size() == 0) return null;
+        else return possibleBlocks;
+    }
+
+    @Nullable
+    public List<BlockFound> searchDown(LivingEntity origin, @Nullable BlockFace ignoreDirection) {
+        List<BlockFound> possibleBlocks = new ArrayList<>();
+        Block entityBlock = Pathing.findEntityFloorBlock(zombie);
+        Block tempBlock;
+        List<BlockFace> currentDirections = new ArrayList<>(directions);
+        if (ignoreDirection != null) {
+            currentDirections.remove(ignoreDirection);
+        }
+
+        for (BlockFace d : currentDirections) {
+            tempBlock = entityBlock.getRelative(d);
+            if (!tempBlock.isPassable()) possibleBlocks.add(new BlockFound(tempBlock, d.getOppositeFace()));
+        }
+
+        if (!possibleBlocks.isEmpty()) return possibleBlocks;
+        else return null;
     }
 
     // find a block that's between two entities' with a range
@@ -176,8 +193,8 @@ public class BlockMining implements Skill {
             yOffset += 1.1;
         }
 
-        Location originLoc = getEntityFloorBlock(origin).getLocation().add(0.5, yOffset, 0.5);
-        Location targetLoc = getEntityFloorBlock(target).getLocation().add(0.5, yOffset, 0.5);
+        Location originLoc = findEntityFloorBlock(origin).getLocation().add(0.5, yOffset, 0.5);
+        Location targetLoc = findEntityFloorBlock(target).getLocation().add(0.5, yOffset, 0.5);
 
         Vector direction = targetLoc.toVector().subtract(originLoc.toVector());
         double distance = originLoc.distance(targetLoc);
@@ -240,10 +257,13 @@ public class BlockMining implements Skill {
 
     @Override
     public boolean trigger() {
-        Bukkit.getLogger().info("Current path is: ");
+        //Bukkit.getLogger().info("Current path is: ");
         for (Block b : currentPath) {
-            Bukkit.getLogger().info(b.getLocation().toString());
+            //Bukkit.getLogger().info(b.getLocation().toString());
         }
+        
+        zombie.setAI(!breaking);
+
         return blocksToBreak.size() > 0;
     }
 

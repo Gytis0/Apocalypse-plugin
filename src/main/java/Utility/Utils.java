@@ -1,5 +1,6 @@
 package Utility;
 
+import Model.BlockFound;
 import org.bukkit.Bukkit;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.EntityType;
@@ -85,5 +86,22 @@ public class Utils {
             if (z > 0) return BlockFace.SOUTH;
             else return BlockFace.NORTH;
         }
+    }
+
+    public static BlockFound findClosestBlockToTarget(List<BlockFound> blocks, LivingEntity target) {
+        double smallestDistance = 9999;
+
+        if (blocks.isEmpty()) return null;
+
+        BlockFound result = null;
+
+        for (BlockFound bf : blocks) {
+            if (bf.getBlock().getLocation().distance(target.getLocation()) < smallestDistance) {
+                smallestDistance = bf.getBlock().getLocation().distance(target.getLocation());
+                result = bf;
+            }
+        }
+
+        return result;
     }
 }

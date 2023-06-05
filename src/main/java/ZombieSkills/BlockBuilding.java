@@ -53,7 +53,7 @@ public class BlockBuilding implements Skill {
 
         Block obstacle = findFirstObstacleOf(path);
 
-        path = findPathStraightLine(getEntityFloorBlock(zombie).getLocation(), obstacle.getLocation());
+        path = findPathStraightLine(findEntityFloorBlock(zombie).getLocation(), obstacle.getLocation());
         if (path != null) {
             Bukkit.getLogger().info("Set path to first obstacle");
             return true;
@@ -78,7 +78,7 @@ public class BlockBuilding implements Skill {
         }
 
         // Path from current position
-        path = findPathStraightLine(Pathing.getEntityFloorBlock(origin).getLocation(), closestLedge.getLocation());
+        path = findPathStraightLine(Pathing.findEntityFloorBlock(origin).getLocation(), closestLedge.getLocation());
         if (path == null) {
             path = new ArrayList<>();
         } else {

@@ -56,7 +56,7 @@ public class Pathing {
         return block;
     }
 
-    public static Block getEntityFloorBlock(LivingEntity entity) {
+    public static Block findEntityFloorBlock(LivingEntity entity) {
         Block block = entity.getLocation().getBlock().getRelative(0, -1, 0);
         int modX = 0, modZ = 0;
         if (block.getType() == Material.AIR) {
@@ -90,15 +90,14 @@ public class Pathing {
 
     @Nullable
     public static Block findEntityRoofBlock(LivingEntity entity, int range) {
-        Block startBlock = getEntityFloorBlock(entity);
-        Block tempBlock = startBlock.getRelative(BlockFace.UP);
+        Block startBlock = findEntityFloorBlock(entity);
+        Block tempBlock = startBlock.getRelative(BlockFace.UP).getRelative(BlockFace.UP);
 
         for (int i = 0; i < range; i++) {
+            tempBlock = tempBlock.getRelative(BlockFace.UP);
             if (tempBlock.getType() != Material.AIR) {
                 return tempBlock;
             }
-
-            tempBlock = tempBlock.getRelative(BlockFace.UP);
         }
 
         return null;
@@ -110,7 +109,7 @@ public class Pathing {
         Queue<Point> blocksToCheck = new LinkedList<>();
         Set<Block> ledges = new HashSet<>();
 
-        Block topBlock = getEntityFloorBlock(entity);
+        Block topBlock = findEntityFloorBlock(entity);
         Block tempBlock;
         Point tempPoint;
 
@@ -183,7 +182,7 @@ public class Pathing {
         List<Block> checkedBlocks = new ArrayList<>();
         Queue<Point> blocksToCheck = new LinkedList<>();
 
-        Block topBlock = getEntityFloorBlock(entity);
+        Block topBlock = findEntityFloorBlock(entity);
         Block tempBlock;
         Point tempPoint;
 
@@ -299,8 +298,8 @@ public class Pathing {
 
     // GET a path
     public static List<Block> findPathTopBlocks(LivingEntity origin, LivingEntity target) {
-        Location originLoc = getEntityFloorBlock(origin).getLocation();
-        Location targetLoc = getEntityFloorBlock(target).getLocation();
+        Location originLoc = findEntityFloorBlock(origin).getLocation();
+        Location targetLoc = findEntityFloorBlock(target).getLocation();
 
         double xLength = Math.abs(originLoc.getX() - targetLoc.getX());
         double zLength = Math.abs(originLoc.getZ() - targetLoc.getZ());
@@ -324,7 +323,7 @@ public class Pathing {
         while (true) {
             cordX = (int) (originLoc.getX() + (x * xDirection));
             cordZ = (int) (originLoc.getZ() + (z * zDirection));
-            block = findTopBlockFromY(cordX, getEntityFloorBlock(origin).getY(), cordZ);
+            block = findTopBlockFromY(cordX, findEntityFloorBlock(origin).getY(), cordZ);
             if (!blocks.contains(block)) {
                 blocks.add(block);
             }

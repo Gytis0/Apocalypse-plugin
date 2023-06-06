@@ -39,7 +39,7 @@ public class Settings {
         loadDifficultySettings(plugin, difficultySettingsFileName);
         loadHordeSettings(plugin, zombieClassesFileName, squadsFileName);
 
-        difficulty.scaleDifficulty(thisWorld.getFullTime() / 24000);
+        difficulty.scaleDifficulty(this.world.getFullTime() / 24000);
     }
 
     public Difficulty getDifficulty() {
@@ -155,5 +155,22 @@ public class Settings {
         }
     }
 
+    public void resetToDefaults() {
+        File file = new File(plugin.getDataFolder().getAbsolutePath() + "/" + difficultySettingsFileName);
+        file.delete();
+        writeDefaults(difficultySettingsFileName);
 
+        file = new File(plugin.getDataFolder().getAbsolutePath() + "/" + zombieClassesFileName);
+        file.delete();
+        writeDefaults(zombieClassesFileName);
+
+        file = new File(plugin.getDataFolder().getAbsolutePath() + "/" + squadsFileName);
+        file.delete();
+        writeDefaults(squadsFileName);
+
+        loadDifficultySettings(plugin, difficultySettingsFileName);
+        loadHordeSettings(plugin, zombieClassesFileName, squadsFileName);
+
+        difficulty.scaleDifficulty(this.world.getFullTime() / 24000);
+    }
 }

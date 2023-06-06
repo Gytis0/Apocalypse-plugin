@@ -6,101 +6,105 @@ commands:
   #Base controls
   toggleApocalypse:
     description: Toggles apocalypse on or off.
-    usage: /toggleapocalypse [true / false]
+    usage: /toggleApocalypse [true / false]
     aliases: [ ta ]
 
   resetMods:
-    description: Reset all player modifications that were made during the apocalypse.
-    usage: /resetmods {@a / player names}
+    description: Reset all player modifications.
+    usage: /resetMods {@a / player names}
     aliases: [ resetm ]
+
+  resetConfig:
+    description: Resets the config to default
+    usage: /resetConfig
+    aliases: [ resetc ]
 
   #Difficulty settings
   setDifficultySetting:
-    description: Changes difficulty's setting. Set to null, if no changes for that property is needed.
-    usage: /setdiffsetting [setting] {base / 0} {linear / 0} {scale / 0}
-    aliases: [ setdiff ]
+    description: Changes difficulty's setting.
+    usage: /setDifficultySetting [setting] {base / 0} {linear / 0} {scale / 0}
+    aliases: [ setdiff, setdiffsettings ]
 
   saveApocalypseSettings:
-    description: Save current apocalypse settings to config files.
-    usage: /saveapocalypsesettings
-    aliases: [ save ]
+    description: Save apocalypse settings to config.
+    usage: /save
 
   #Horde settings
   setZombieType:
     description: Set properties for zombie type.
-    usage: /setzombietype [type] [weight / 0] {lvlRequirement}
+    usage: /setZombieType [type] [weight / 0] {lvlRequirement}
     aliases: [ settype ]
 
   createSquad:
     description: Create a squad.
-    usage: /createsquad [squadName]
+    usage: /createSquad [squadName]
     aliases: [ cs ]
 
   setSquad:
-    description: Add, change or remove zombies from squads. Change amount to non-positive to remove a zombie type.
-    usage: /setsquad [squadName] [zombieType] [amount]
+    description: Add, change or remove zombies from squads.
+    usage: /setSquad [squadName] [zombieType] [amount]
     aliases: [ ss ]
 
   removeSquad:
     description: Remove a squad.
-    usage: /removesquad [squadName]
+    usage: /removeSquad [squadName]
     aliases: [ rs ]
 
   #Printing
   printHelp:
     description: Prints help for the apocalypse plugin.
-    usage: /apocalypsehelp
+    usage: /printHelp
     aliases: [ aphelp, printaphelp ]
 
   printDifficultySettings:
-    description: Prints base apocalypse difficulty settings.
-    usage: /difficultysettings
+    description: Prints base difficulty settings.
+    usage: /printDifficultySettings
     aliases: [ diffsets, dsets, diff ]
 
   printCurrentSettings:
-    description: Prints current on-going apocalypse scaled difficulty settings.
-    usage: /currentsettings
+    description: Prints current difficulty settings.
+    usage: /printCurrentSettings
     aliases: [ cdiffsets, cdsets ]
 
   printActiveZombies:
     description: Prints how many active zombies there are.
-    usage: /printactivezombies
+    usage: /printActiveZombies
     aliases: [ paz ]
 
   printLevelSpawnPercentages:
-    description: Prints a table of level spawn chances.
-    usage: /printlevelspawnpercentages
+    description: Prints level spawn chances.
+    usage: /printLevelSpawnPercentages
     aliases: [ plsp, printchances ]
 
   printZombieTypes:
-    description: Prints a table of zombie types and their properties.
-    usage: /printzombietypes
+    description: Prints a table of zombie types.
+    usage: /printZombieTypes
     aliases: [ pzt, printtypes ]
 
   printSquads:
     description: Prints a table of created squads.
-    usage: /printsquads
+    usage: /printSquads
     aliases: [ ps ]
 
   printMyVector:
     description: Prints your facing of vector
-    usage: /printmyvector
+    usage: /printMyVector
     aliases: [ pmv ]
 
   #Utility
   spawnSquad:
-    description: Spawns a squad on top of a player. Used for testing purposes.
-    usage: /spawnsquad [squadName] [level]
+    description: Spawns a squad on top of a player.
+    usage: /spawnSquad [squadName] [level]
 
   despawnZombies:
     description: Despawns all active zombies.
-    usage: /despawnzombies
+    usage: /despawnZombies
 
   # Debugging
   placeBlockAtLedge:
     description: Places a glass block at a calculated ledge. Used for debugging purposes.
-    usage: /placeblockatledge
+    usage: /placeBlockAtLedge
 
   placeBlockAt45:
     description: Places a block at 45 degrees angle down to NORTH
-    usage: /placeblockat45
+    usage: /placeBlockAt45

@@ -75,6 +75,7 @@ public final class Apocalypse extends JavaPlugin {
         getCommand("createSquad").setExecutor(new CreateSquad(settings.getHordes()));
         getCommand("setSquad").setExecutor(new SetSquad(settings.getHordes()));
         getCommand("removeSquad").setExecutor(new RemoveSquad(settings.getHordes()));
+        getCommand("resetConfig").setExecutor(new ResetConfig(settings));
 
         getCommand("saveApocalypseSettings").setExecutor(new SaveApocalypseSettings(settings));
 

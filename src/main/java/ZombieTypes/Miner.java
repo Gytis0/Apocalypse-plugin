@@ -103,11 +103,11 @@ public class Miner extends Regular {
             } else increaseIndex();
         } else if (pathIndex == 3 && goalManager.areGoalsEmpty()) {
             if (target.getLocation().getY() > zombie.getLocation().getY()) {
-                goalManager.addGoal(new GoalReachTarget(blockMining.searchFor4raysUp, zombie, target, pathLevel, pathIndex, PathType.RAYS_UP));
+                goalManager.addGoal(new GoalReachTarget(blockMining.carveUp, zombie, target, pathLevel, pathIndex, PathType.RAYS_UP));
                 goalManager.addGoal(new GoalMoveFree(zombie));
                 //Bukkit.getLogger().info("Added raysUp goal");
             } else {
-                goalManager.addGoal(new GoalReachTarget(blockMining.searchFor4raysDown, zombie, target, pathLevel, pathIndex, PathType.RAYS_DOWN));
+                goalManager.addGoal(new GoalReachTarget(blockMining.carveDown, zombie, target, pathLevel, pathIndex, PathType.RAYS_DOWN));
                 goalManager.addGoal(new GoalMoveFree(zombie));
                 //Bukkit.getLogger().info("Added raysDown goal");
             }

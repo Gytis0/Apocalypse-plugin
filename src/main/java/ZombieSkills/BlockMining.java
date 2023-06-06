@@ -36,7 +36,7 @@ public class BlockMining implements Skill {
     boolean breaking = false;
     double mineRange = 5;
 
-    List<Block> currentPath;
+    List<Block> currentPath = new ArrayList<>();
 
     // 4 Rays
     List<BlockFace> directions = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
@@ -48,8 +48,8 @@ public class BlockMining implements Skill {
 
     public ReachTarget searchForFirstObstacle = this::mineFirstObstacle;
     public ReachTarget searchForStraightPath = this::mineStraightLine;
-    public ReachTarget searchFor4raysUp = this::mineUp;
-    public ReachTarget searchFor4raysDown = this::mineDown;
+    public ReachTarget carveUp = this::carveUp;
+    public ReachTarget carveDown = this::carveDown;
 
     public BlockMining(Zombie zombie, World world, int level, List<ItemStack> inventory, int activeInventorySlot, List<Block> path) {
         this.zombie = zombie;
@@ -98,92 +98,124 @@ public class BlockMining implements Skill {
         else return topBlock;
     }
 
-    public Object mineUp(LivingEntity origin, LivingEntity target, int level, int index) {
-        List<BlockFound> possibleBlocks = searchRayEyeLevel(zombie, recentDirection);
-        if (possibleBlocks == null) return null;
+    @Nullable
+    public Object carveUp(LivingEntity origin, LivingEntity target, int level, int index) {
+        Block tempBlock;
 
-        possibleBlocks.removeIf(b -> currentPath.contains(b));
-        if (possibleBlocks.isEmpty()) return null;
+        // If the path doesn't exist, find a start for it
+        if (currentPath.isEmpty()) {
+            Bukkit.getLogger().info("Finding a new starting block...");
+            BlockFound startBlock = findStartBlockEyeLevel(origin, target);
+            if (startBlock == null) return null;
+            return mineUp(startBlock);
+        }
 
-        BlockFound tempBlockFound = Utils.findClosestBlockToTarget(possibleBlocks, target);
-        Block tempBlock = tempBlockFound.getBlock();
-        recentDirection = tempBlockFound.getFoundFrom();
+        Block pivotBlock = currentPath.get(currentPath.size() - 1).getRelative(BlockFace.UP).getRelative(BlockFace.UP);
+        List<BlockFound> possibleBlocks = new ArrayList<>();
+        for (BlockFace d : directions) {
+            tempBlock = pivotBlock.getRelative(d);
+            if (!tempBlock.isPassable() && !tempBlock.getRelative(BlockFace.DOWN).isPassable())
+                possibleBlocks.add(new BlockFound(tempBlock, d.getOppositeFace()));
+        }
+
+        BlockFound closestBlock = Utils.findClosestBlockFoundToTarget(possibleBlocks, target);
+
+        return mineUp(closestBlock);
+    }
+
+    public Object carveDown(LivingEntity origin, LivingEntity target, int level, int index) {
+        Block tempBlock;
+
+        // If the path doesn't exist, find a start for it
+        if (currentPath.isEmpty()) {
+            Bukkit.getLogger().info("Finding a new starting block...");
+            BlockFound startBlock = findStartBlockDown(origin, target);
+            if (startBlock == null) return null;
+            return mineDown(startBlock);
+        }
+
+
+        Block pivotBlock = currentPath.get(currentPath.size() - 1);
+        List<BlockFound> possibleBlocks = new ArrayList<>();
+        for (BlockFace d : directions) {
+            tempBlock = pivotBlock.getRelative(d);
+            if (!tempBlock.isPassable()) possibleBlocks.add(new BlockFound(tempBlock, d.getOppositeFace()));
+        }
+
+        BlockFound closestBlock = Utils.findClosestBlockFoundToTarget(possibleBlocks, target);
+
+        return mineDown(closestBlock);
+    }
+
+    private Block mineUp(BlockFound startBlock) {
+        Block result;
+        Block tempBlock;
+        tempBlock = result = startBlock.getBlock();
+        recentDirection = startBlock.getFoundFrom();
 
         blocksToBreak.add(tempBlock);
 
         tempBlock = tempBlock.getRelative(BlockFace.UP);
         if (!tempBlock.isPassable()) blocksToBreak.add(tempBlock);
 
-        tempBlock = Pathing.findEntityRoofBlock(zombie, 1);
-        if (tempBlock != null && !tempBlock.isPassable()) blocksToBreak.add(tempBlock);
-
-        return tempBlock;
-    }
-
-    public Object mineDown(LivingEntity origin, LivingEntity target, int level, int index) {
-        List<BlockFound> possibleBlocks = searchDown(origin, recentDirection);
-
-        if (possibleBlocks == null) return null;
-
-        possibleBlocks.removeIf(b -> currentPath.contains(b));
-        if (possibleBlocks.isEmpty()) return null;
-
-        BlockFound tempBlockFound = Utils.findClosestBlockToTarget(possibleBlocks, target);
-        Block stairBlock = tempBlockFound.getBlock();
-        recentDirection = tempBlockFound.getFoundFrom();
-
-        // Do the stair case
-        blocksToBreak.add(stairBlock);
-        Block result = stairBlock;
-
-        stairBlock = stairBlock.getRelative(BlockFace.UP);
-        if (!stairBlock.isPassable()) blocksToBreak.add(stairBlock);
-
-        stairBlock = stairBlock.getRelative(BlockFace.UP);
-        if (!stairBlock.isPassable()) blocksToBreak.add(stairBlock);
+        tempBlock = tempBlock.getRelative(recentDirection);
+        if (!tempBlock.isPassable()) blocksToBreak.add(tempBlock);
 
         return result;
     }
+
+    private Block mineDown(BlockFound startBlock) {
+        Block result;
+        Block tempBlock;
+        tempBlock = result = startBlock.getBlock();
+        recentDirection = startBlock.getFoundFrom();
+
+        blocksToBreak.add(tempBlock);
+
+        tempBlock = tempBlock.getRelative(BlockFace.UP);
+        if (!tempBlock.isPassable()) blocksToBreak.add(tempBlock);
+
+        tempBlock = tempBlock.getRelative(BlockFace.UP);
+        if (!tempBlock.isPassable()) blocksToBreak.add(tempBlock);
+
+        return result;
+    }
+
 
     public boolean isBreaking() {
         return breaking;
     }
 
     @Nullable
-    public List<BlockFound> searchRayEyeLevel(LivingEntity origin, @Nullable BlockFace ignoreDirection) {
+    public BlockFound findStartBlockEyeLevel(LivingEntity origin, LivingEntity target) {
         List<BlockFound> possibleBlocks = new ArrayList<>();
-        List<BlockFace> currentDirections = new ArrayList<>(directions);
-        if (ignoreDirection != null) {
-            currentDirections.remove(ignoreDirection);
-        }
 
-        for (BlockFace d : currentDirections) {
-            RayTraceResult result = world.rayTraceBlocks(origin.getLocation().add(0, 1, 0), d.getDirection(), 1);
+        for (BlockFace d : directions) {
+            RayTraceResult result = world.rayTraceBlocks(origin.getLocation().add(0, 1, 0), d.getDirection(), mineRange + 2);
             if (result != null && result.getHitBlock() != null)
                 possibleBlocks.add(new BlockFound(result.getHitBlock(), d.getOppositeFace()));
         }
 
-        if (possibleBlocks.size() == 0) return null;
-        else return possibleBlocks;
+        if (possibleBlocks.isEmpty()) return null;
+
+        return Utils.findClosestBlockFoundToTarget(possibleBlocks, target);
     }
 
     @Nullable
-    public List<BlockFound> searchDown(LivingEntity origin, @Nullable BlockFace ignoreDirection) {
+    public BlockFound findStartBlockDown(LivingEntity origin, LivingEntity target) {
         List<BlockFound> possibleBlocks = new ArrayList<>();
-        Block entityBlock = Pathing.findEntityFloorBlock(zombie);
-        Block tempBlock;
-        List<BlockFace> currentDirections = new ArrayList<>(directions);
-        if (ignoreDirection != null) {
-            currentDirections.remove(ignoreDirection);
-        }
 
-        for (BlockFace d : currentDirections) {
+        Block entityBlock = Pathing.findEntityFloorBlock(origin);
+        Block tempBlock;
+
+        for (BlockFace d : directions) {
             tempBlock = entityBlock.getRelative(d);
             if (!tempBlock.isPassable()) possibleBlocks.add(new BlockFound(tempBlock, d.getOppositeFace()));
         }
 
-        if (!possibleBlocks.isEmpty()) return possibleBlocks;
-        else return null;
+        if (possibleBlocks.isEmpty()) return null;
+
+        return Utils.findClosestBlockFoundToTarget(possibleBlocks, target);
     }
 
     // find a block that's between two entities' with a range
@@ -261,7 +293,7 @@ public class BlockMining implements Skill {
         for (Block b : currentPath) {
             //Bukkit.getLogger().info(b.getLocation().toString());
         }
-        
+
         zombie.setAI(!breaking);
 
         return blocksToBreak.size() > 0;
@@ -271,13 +303,14 @@ public class BlockMining implements Skill {
     public void action() {
         if (!isBreaking()) {
             if (!startBreakingBlock(inventory.get(activeInventorySlot), blocksToBreak.get(0))) {
-                Bukkit.getLogger().info("Can't reach the block, moving to " + blocksToBreak.get(0).getLocation());
-                Bukkit.getLogger().info("The distance to block is: " + zombie.getLocation().distance(blocksToBreak.get(0).getLocation()));
+                Bukkit.getLogger().info("Can't reach the block");
+                Bukkit.getLogger().info(blocksToBreak.get(0).getLocation().toVector().toString());
+                Bukkit.getLogger().info("distance to block " + zombie.getLocation().distance(blocksToBreak.get(0).getLocation()));
 
                 pathfinder.moveTo(blocksToBreak.get(0).getLocation());
             }
         } else {
-            Bukkit.getLogger().info("Breaking " + blocksToBreak.get(0).getLocation());
+            Bukkit.getLogger().info("Breaking " + blocksToBreak.get(0).getLocation().toVector());
         }
     }
 

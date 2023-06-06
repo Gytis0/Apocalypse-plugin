@@ -41,8 +41,6 @@ public class ZombieSpawner {
         rand = new Random();
 
         new RepeatableTask(this::update, 0, 3);
-
-
     }
 
     public void update() {
@@ -92,6 +90,8 @@ public class ZombieSpawner {
         Squad squadToSpawn;
 
         for (Player player : playerList) {
+            if (player.isDead()) return;
+
             tempSize = size;
             while (true) {
                 randomLevel = difficulty.getRandomLevel();

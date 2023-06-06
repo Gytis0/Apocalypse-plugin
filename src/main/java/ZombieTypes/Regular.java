@@ -21,7 +21,8 @@ import java.util.List;
 
 public class Regular implements Listener {
     protected RepeatableTask updateTask;
-    protected LivingEntity target;
+    protected LivingEntity originalTarget;
+    protected LivingEntity currentTarget;
     protected final World world;
 
     protected int level;
@@ -43,6 +44,9 @@ public class Regular implements Listener {
         Bukkit.getPluginManager().registerEvents(this, apocalypse);
 
         this.level = level;
+        this.originalTarget = target;
+        this.currentTarget = target;
+
         zombieType = ZombieTypes.REGULAR;
 
         updateTask = new RepeatableTask(this::update, 0, 5f);
@@ -69,8 +73,8 @@ public class Regular implements Listener {
         }
     }
 
-    public LivingEntity getCustomTarget() {
-        return target;
+    public LivingEntity getOriginalTarget() {
+        return originalTarget;
     }
 
     // Utils
@@ -79,7 +83,7 @@ public class Regular implements Listener {
         loc.add(0, 1, 0);
 
         zombie = loc.getWorld().spawn(loc, Zombie.class);
-        this.target = target;
+        this.originalTarget = target;
         zombie.setTarget(target);
 
         setName();
@@ -102,7 +106,21 @@ public class Regular implements Listener {
         else if (zombieType == ZombieTypes.MINER) classColor = ChatColor.DARK_RED;
         else if (zombieType == ZombieTypes.BUILDER) classColor = ChatColor.YELLOW;
 
-        zombie.setCustomName(classColor + zombieType.toString().toUpperCase() + ChatColor.WHITE + " || " + target.getName() + " [Lv. " + level + "]");
+        zombie.setCustomName(classColor + zombieType.toString().toUpperCase() + ChatColor.WHITE + " || " + originalTarget.getName() + " [Lv. " + level + "]");
+    }
+
+    protected boolean isThereAtargetToKill() {
+        if (!currentTarget.isDead()) return true;
+        else if (currentTarget.isDead() && !originalTarget.isDead()) {
+            currentTarget = originalTarget;
+            return true;
+        } else if (currentTarget.isDead() && originalTarget.isDead() && zombie.getTarget() != null) {
+            currentTarget = zombie.getTarget();
+            return true;
+        } else {
+            Bukkit.getLogger().info("Idling, because there are not targets to KILL");
+            return false;
+        }
     }
 
     @EventHandler

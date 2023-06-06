@@ -13,6 +13,7 @@ import org.bukkit.World;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -27,7 +28,8 @@ public class Settings {
     String difficultySettingsFileName = "difficultySettings.json";
     String zombieClassesFileName = "zombieClasses.json";
     String squadsFileName = "squads.json";
-    public Settings(Apocalypse plugin, World thisWorld){
+
+    public Settings(Apocalypse plugin, World thisWorld) {
         this.plugin = plugin;
         this.world = thisWorld;
 
@@ -40,21 +42,21 @@ public class Settings {
         difficulty.scaleDifficulty(thisWorld.getFullTime() / 24000);
     }
 
-    public Difficulty getDifficulty(){
+    public Difficulty getDifficulty() {
         return difficulty;
     }
 
-    public Hordes getHordes(){
+    public Hordes getHordes() {
         return hordes;
     }
 
 
-    public boolean saveSettings(){
+    public boolean saveSettings() {
         Gson gson = new Gson();
         String saveText;
         // Difficulty settings
         saveText = gson.toJson(difficulty.getDifficultySettings());
-        boolean firstSave =  writeToFile(difficultySettingsFileName, saveText);
+        boolean firstSave = writeToFile(difficultySettingsFileName, saveText);
 
         // ZombieClasses
         saveText = gson.toJson(hordes.getZombieClasses());
@@ -67,33 +69,42 @@ public class Settings {
         return firstSave && secondSave && thirdSave;
     }
 
-    public void loadDifficultySettings(Apocalypse plugin, String fileName){
+    public void loadDifficultySettings(Apocalypse plugin, String fileName) {
         writeDefaults(fileName);
 
         Gson gson = new Gson();
         String content = readFromFile(plugin.getDataFolder().getAbsolutePath() + "/" + fileName);
 
-        Type mapType = new TypeToken<Map<String, DifficultySetting>>() {}.getType();
+        Type mapType = new TypeToken<Map<String, DifficultySetting>>() {
+        }.getType();
         difficulty.setDifficultySettings(gson.fromJson(content, mapType));
     }
 
-    public void loadHordeSettings(Apocalypse plugin, String zombieClassesFileName, String squadsFileName){
+    public void loadHordeSettings(Apocalypse plugin, String zombieClassesFileName, String squadsFileName) {
         Gson gson = new Gson();
 
         writeDefaults(zombieClassesFileName);
 
         String content = readFromFile(plugin.getDataFolder().getAbsolutePath() + "/" + zombieClassesFileName);
-        Type listType = new TypeToken<ArrayList<ZombieClass>>(){}.getType();
-        hordes.setZombieClasses(gson.fromJson(content, listType));
+        Type listType = new TypeToken<ArrayList<ZombieClass>>() {
+        }.getType();
+        List<ZombieClass> classes = gson.fromJson(content, listType);
+        if (!classes.isEmpty()) {
+            Bukkit.getLogger().info("There are some classes");
+        } else {
+            Bukkit.getLogger().warning("There are no classes");
+        }
+        hordes.setZombieClasses(classes);
 
         writeDefaults(squadsFileName);
 
         content = readFromFile(plugin.getDataFolder().getAbsolutePath() + "/" + squadsFileName);
-        listType = new TypeToken<ArrayList<Squad>>(){}.getType();
+        listType = new TypeToken<ArrayList<Squad>>() {
+        }.getType();
         hordes.setSquads(gson.fromJson(content, listType));
     }
 
-    private boolean writeToFile(String fileName, String content){
+    private boolean writeToFile(String fileName, String content) {
         String path = plugin.getDataFolder().getAbsolutePath() + "/" + fileName;
 
         try {
@@ -106,7 +117,7 @@ public class Settings {
         }
     }
 
-    private String readFromFile(String path){
+    private String readFromFile(String path) {
         File file = new File(path);
         Scanner reader;
         try {
@@ -115,7 +126,7 @@ public class Settings {
             throw new RuntimeException(e);
         }
         String content = "";
-        while(reader.hasNextLine()){
+        while (reader.hasNextLine()) {
             content = content.concat(reader.nextLine());
         }
 
@@ -123,10 +134,10 @@ public class Settings {
         return content;
     }
 
-    private void writeDefaults(String fileName){
+    private void writeDefaults(String fileName) {
         File file = new File(plugin.getDataFolder().getAbsolutePath() + "/" + fileName);
         // if file does not exist, create it
-        if(file.length() == 0){
+        if (file.length() == 0) {
             try {
                 Bukkit.getLogger().info(fileName + " does not exist. Creating one now...");
                 file.createNewFile();

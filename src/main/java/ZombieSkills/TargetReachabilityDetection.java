@@ -1,11 +1,12 @@
 package ZombieSkills;
 
 import com.destroystokyo.paper.entity.Pathfinder;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Zombie;
 
-public class TargetReachabilityDetection implements Skill {
+public class TargetReachabilityDetection implements ISkill {
     Zombie zombie;
     Pathfinder pathfinder;
     LivingEntity target;
@@ -37,20 +38,23 @@ public class TargetReachabilityDetection implements Skill {
 
     @Override
     public void action() {
+        // We'd rather say the target is reachable than not, if we cannot figure it out
         Pathfinder.PathResult path = pathfinder.findPath(target);
         Location closestLocation;
 
         if (path == null) {
-            isTargetReachable = false;
+            isTargetReachable = true;
             return;
         }
         closestLocation = path.getFinalPoint();
 
         if (closestLocation == null) {
-            isTargetReachable = false;
+            isTargetReachable = true;
             return;
         }
-        isTargetReachable = closestLocation.distance(target.getLocation()) <= 1.0;
+        double distance = closestLocation.distance(target.getLocation());
+        Bukkit.getLogger().info("Distance to target: " + distance);
+        isTargetReachable = distance <= 1.0;
     }
 
     @Override

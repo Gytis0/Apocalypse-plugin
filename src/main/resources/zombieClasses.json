@@ -1,0 +1,17 @@
+[
+  {
+    "type": "REGULAR",
+    "levelRequirement": 0,
+    "weight": 1
+  },
+  {
+    "type": "MINER",
+    "levelRequirement": 0,
+    "weight": 5
+  },
+  {
+    "type": "BUILDER",
+    "levelRequirement": 2,
+    "weight": 8
+  }
+]

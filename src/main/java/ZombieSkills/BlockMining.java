@@ -13,7 +13,6 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.RayTraceResult;
 import org.bukkit.util.Vector;
@@ -25,7 +24,7 @@ import java.util.List;
 
 import static Utility.Pathing.findEntityFloorBlock;
 
-public class BlockMining implements Skill {
+public class BlockMining extends Skill {
     Zombie zombie;
     Pathfinder pathfinder;
     World world;
@@ -41,8 +40,6 @@ public class BlockMining implements Skill {
     // 4 Rays
     List<BlockFace> directions = Arrays.asList(BlockFace.NORTH, BlockFace.EAST, BlockFace.SOUTH, BlockFace.WEST);
     BlockFace recentDirection;
-
-    PotionEffect standStill = new PotionEffect(PotionEffectType.SLOW, 60, 255);
 
     int breakingTaskId, breakTaskId;
 
@@ -249,7 +246,6 @@ public class BlockMining implements Skill {
 
         breaking = true;
         float timeToBreak = GameUtils.getBlockDestroySpeed(block, tool);
-        zombie.addPotionEffect(standStill);
 
         breakingTaskId = new RepeatableTask(() -> {
             GameUtils.playBreakBlockParticles(world, block, 3);
@@ -266,7 +262,6 @@ public class BlockMining implements Skill {
 
     protected void stopBreakingBlocks() {
         breaking = false;
-        zombie.removePotionEffect(PotionEffectType.SLOW);
         blocksToBreak.clear();
         Bukkit.getScheduler().cancelTask(breakingTaskId);
         Bukkit.getScheduler().cancelTask(breakTaskId);
@@ -289,10 +284,7 @@ public class BlockMining implements Skill {
 
     @Override
     public boolean trigger() {
-        //Bukkit.getLogger().info("Current path is: ");
-        for (Block b : currentPath) {
-            //Bukkit.getLogger().info(b.getLocation().toString());
-        }
+        if (!enabled) return false;
 
         zombie.setAI(!breaking);
 
@@ -316,11 +308,14 @@ public class BlockMining implements Skill {
 
     @Override
     public void disable() {
-
+        enabled = false;
+        stopBreakingBlocks();
+        currentPath.clear();
+        zombie.setAI(true);
     }
 
     @Override
     public void enable() {
-
+        enabled = true;
     }
 }

@@ -56,6 +56,10 @@ public class GoalManager {
         return goals.size() == 0;
     }
 
+    public void emptyGoals() {
+        goals.clear();
+    }
+
     public int getGoalSize() {
         return goals.size();
     }

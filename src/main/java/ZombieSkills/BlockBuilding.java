@@ -18,7 +18,7 @@ import java.util.List;
 
 import static Utility.Pathing.*;
 
-public class BlockBuilding implements Skill {
+public class BlockBuilding extends Skill {
     Zombie zombie;
     LivingEntity target;
     Pathfinder pathfinder;
@@ -66,6 +66,8 @@ public class BlockBuilding implements Skill {
 
     public boolean setPathToTargetLedge(LivingEntity origin, LivingEntity target, int level, int index) {
         List<Block> playerLedges = Pathing.findNearestLedges(target, level * 10, index - 1);
+        if (playerLedges == null) return false;
+
         Block closestLedge = null;
         double closestDistance = 9999;
         double temp;
@@ -138,6 +140,8 @@ public class BlockBuilding implements Skill {
 
     @Override
     public boolean trigger() {
+        if (!enabled) return false;
+
         if (path.size() > 0) {
             return true;
         } else {
@@ -164,11 +168,13 @@ public class BlockBuilding implements Skill {
 
     @Override
     public void disable() {
-
+        enabled = false;
+        lastPlacedBlock = null;
+        path.clear();
     }
 
     @Override
     public void enable() {
-
+        enabled = true;
     }
 }

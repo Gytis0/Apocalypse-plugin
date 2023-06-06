@@ -46,9 +46,13 @@ public class Builder extends Regular {
 
         clearIfInvalid();
 
+        // If the target is dead, find a new one
+        if (!isThereAtargetToKill()) return;
+
         // If there are goals to do, do them first
         if (!goalManager.areGoalsEmpty()) {
             Object obj = goalManager.doGoals();
+            return;
         }
         // If there is a path to build, build it
         if (blockBuilding.trigger()) {
@@ -89,7 +93,7 @@ public class Builder extends Regular {
         Bukkit.getLogger().info("Current level / index / cycle: " + pathLevel + " / " + pathIndex + " / " + pathCycle);
 
         if (pathIndex == 1) {
-            goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToTargetLedge, zombie, target, pathLevel, pathIndex, PathType.NEAREST_LEDGE));
+            goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToTargetLedge, zombie, currentTarget, pathLevel, pathIndex, PathType.NEAREST_LEDGE));
         }
     }
 

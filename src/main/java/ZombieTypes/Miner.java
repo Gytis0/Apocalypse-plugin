@@ -50,6 +50,13 @@ public class Miner extends Regular {
 
         clearIfInvalid();
 
+        // If the target is dead, find a new one
+        if (!isThereAtargetToKill()) {
+            goalManager.emptyGoals();
+            blockMining.disable();
+            return;
+        }
+
         // If there are goals to do, do them first
         if (!goalManager.areGoalsEmpty()) {
             Object obj = goalManager.doGoals();
@@ -57,6 +64,7 @@ public class Miner extends Regular {
                 path.add(((Block) obj).getRelative(BlockFace.DOWN));
                 movedToFront = false;
             }
+            return;
         }
 
         // If there are blocks to mine, mine them
@@ -92,22 +100,22 @@ public class Miner extends Regular {
             goalManager.addGoal(new GoalStandStill(zombie));
             movedToFront = true;
         } else if (pathIndex == 1 && goalManager.areGoalsEmpty()) {
-            goalManager.addGoal(new GoalReachTarget(blockMining.searchForFirstObstacle, zombie, target, pathLevel, pathIndex, PathType.FIRST_OBSTACLE));
+            goalManager.addGoal(new GoalReachTarget(blockMining.searchForFirstObstacle, zombie, currentTarget, pathLevel, pathIndex, PathType.FIRST_OBSTACLE));
             goalManager.addGoal(new GoalMoveFree(zombie));
             //Bukkit.getLogger().info("Added firstObstacle goal");
         } else if (pathIndex == 2 && goalManager.areGoalsEmpty()) {
-            if (isTargetRelativelyTheSameY(zombie, target)) {
+            if (isTargetRelativelyTheSameY(zombie, currentTarget)) {
                 //Bukkit.getLogger().info("Added straightLine goal");
-                goalManager.addGoal(new GoalReachTarget(blockMining.searchForStraightPath, zombie, target, pathLevel, pathIndex, PathType.STRAIGHT_LINE));
+                goalManager.addGoal(new GoalReachTarget(blockMining.searchForStraightPath, zombie, currentTarget, pathLevel, pathIndex, PathType.STRAIGHT_LINE));
                 goalManager.addGoal(new GoalMoveFree(zombie));
             } else increaseIndex();
         } else if (pathIndex == 3 && goalManager.areGoalsEmpty()) {
-            if (target.getLocation().getY() > zombie.getLocation().getY()) {
-                goalManager.addGoal(new GoalReachTarget(blockMining.carveUp, zombie, target, pathLevel, pathIndex, PathType.RAYS_UP));
+            if (currentTarget.getLocation().getY() > zombie.getLocation().getY()) {
+                goalManager.addGoal(new GoalReachTarget(blockMining.carveUp, zombie, currentTarget, pathLevel, pathIndex, PathType.RAYS_UP));
                 goalManager.addGoal(new GoalMoveFree(zombie));
                 //Bukkit.getLogger().info("Added raysUp goal");
             } else {
-                goalManager.addGoal(new GoalReachTarget(blockMining.carveDown, zombie, target, pathLevel, pathIndex, PathType.RAYS_DOWN));
+                goalManager.addGoal(new GoalReachTarget(blockMining.carveDown, zombie, currentTarget, pathLevel, pathIndex, PathType.RAYS_DOWN));
                 goalManager.addGoal(new GoalMoveFree(zombie));
                 //Bukkit.getLogger().info("Added raysDown goal");
             }

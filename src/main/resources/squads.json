@@ -1,18 +1,36 @@
 [
   {
-    "squadName": "first",
+    "squadName": "Regulars",
     "squadContent": {
-      "BUILDER": 123,
-      "MINER": 456
+      "REGULAR": 5
     },
-    "totalWeight": 0
+    "totalWeight": 5,
+    "levelRequirement": 0
   },
   {
-    "squadName": "second",
+    "squadName": "MinerSquad",
     "squadContent": {
-      "BUILDER": 798,
-      "MINER": 7897
+      "MINER": 1
     },
-    "totalWeight": 0
+    "totalWeight": 1,
+    "levelRequirement": 0
+  },
+  {
+    "squadName": "Builder",
+    "squadContent": {
+      "BUILDER": 1
+    },
+    "totalWeight": 3,
+    "levelRequirement": 3
+  },
+  {
+    "squadName": "Mixed",
+    "squadContent": {
+      "MINER": 2,
+      "BUILDER": 1,
+      "REGULAR": 3
+    },
+    "totalWeight": 8,
+    "levelRequirement": 3
   }
 ]

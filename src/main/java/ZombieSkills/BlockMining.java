@@ -66,7 +66,7 @@ public class BlockMining extends Skill {
             return obstacle;
         }
 
-        Bukkit.getLogger().warning("First obstacle failed");
+        //Bukkit.getLogger().warning("First obstacle failed");
         return null;
     }
 
@@ -76,7 +76,7 @@ public class BlockMining extends Skill {
         boolean success = false;
 
         if (topBlock == null && botBlock == null) {
-            Bukkit.getLogger().warning("Straight path failed");
+            //Bukkit.getLogger().warning("Straight path failed");
             return null;
         }
 
@@ -101,7 +101,7 @@ public class BlockMining extends Skill {
 
         // If the path doesn't exist, find a start for it
         if (currentPath.isEmpty()) {
-            Bukkit.getLogger().info("Finding a new starting block...");
+            //Bukkit.getLogger().info("Finding a new starting block...");
             BlockFound startBlock = findStartBlockEyeLevel(origin, target);
             if (startBlock == null) return null;
             return mineUp(startBlock);
@@ -125,7 +125,7 @@ public class BlockMining extends Skill {
 
         // If the path doesn't exist, find a start for it
         if (currentPath.isEmpty()) {
-            Bukkit.getLogger().info("Finding a new starting block...");
+            //Bukkit.getLogger().info("Finding a new starting block...");
             BlockFound startBlock = findStartBlockDown(origin, target);
             if (startBlock == null) return null;
             return mineDown(startBlock);
@@ -233,7 +233,7 @@ public class BlockMining extends Skill {
 
         if (result != null) {
             if (result.getHitEntity() != null) {
-                Bukkit.getLogger().info("I hit " + result.getHitEntity());
+                //Bukkit.getLogger().info("I hit " + result.getHitEntity());
             }
             return result.getHitBlock();
         } else {
@@ -295,14 +295,14 @@ public class BlockMining extends Skill {
     public void action() {
         if (!isBreaking()) {
             if (!startBreakingBlock(inventory.get(activeInventorySlot), blocksToBreak.get(0))) {
-                Bukkit.getLogger().info("Can't reach the block");
-                Bukkit.getLogger().info(blocksToBreak.get(0).getLocation().toVector().toString());
-                Bukkit.getLogger().info("distance to block " + zombie.getLocation().distance(blocksToBreak.get(0).getLocation()));
+                //Bukkit.getLogger().info("Can't reach the block");
+                // Bukkit.getLogger().info(blocksToBreak.get(0).getLocation().toVector().toString());
+                // Bukkit.getLogger().info("distance to block " + zombie.getLocation().distance(blocksToBreak.get(0).getLocation()));
 
                 pathfinder.moveTo(blocksToBreak.get(0).getLocation());
             }
         } else {
-            Bukkit.getLogger().info("Breaking " + blocksToBreak.get(0).getLocation().toVector());
+            //Bukkit.getLogger().info("Breaking " + blocksToBreak.get(0).getLocation().toVector());
         }
     }
 

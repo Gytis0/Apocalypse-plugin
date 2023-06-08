@@ -79,13 +79,13 @@ public class Miner extends Regular {
             targetReachabilityDetection.action();
 
             if (targetReachabilityDetection.getIsTargetReachable()) {
-                Bukkit.getLogger().info("Player IS reachable.");
+                //Bukkit.getLogger().info("Player IS reachable.");
                 playerIsReachable = true;
                 return;
             }
         } else return;
 
-        Bukkit.getLogger().info("Player IS NOT reachable");
+        //Bukkit.getLogger().info("Player IS NOT reachable");
         playerIsReachable = false;
 
         Queue<Goal> fails = goalManager.getMostRecentFails();

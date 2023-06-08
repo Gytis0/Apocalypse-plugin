@@ -3,7 +3,6 @@ package ZombieSkills;
 import Model.Goals.ReachTarget;
 import Utility.Pathing;
 import com.destroystokyo.paper.entity.Pathfinder;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -46,7 +45,7 @@ public class BlockBuilding extends Skill {
     }
 
     public boolean setPathToFirstObstacle(LivingEntity target, int range, int obstaclesToIgnore) {
-        Bukkit.getLogger().info("Setting path to FIRST OBSTACLE...");
+        //Bukkit.getLogger().info("Setting path to FIRST OBSTACLE...");
         this.target = target;
 
         path = findPathTopBlocks(zombie, target);
@@ -55,10 +54,10 @@ public class BlockBuilding extends Skill {
 
         path = findPathStraightLine(findEntityFloorBlock(zombie).getLocation(), obstacle.getLocation());
         if (path != null) {
-            Bukkit.getLogger().info("Set path to first obstacle");
+            //Bukkit.getLogger().info("Set path to first obstacle");
             return true;
         } else {
-            Bukkit.getLogger().info("Could not set a path to first obstacle");
+            //Bukkit.getLogger().info("Could not set a path to first obstacle");
             path = new ArrayList<>();
             return false;
         }
@@ -84,7 +83,7 @@ public class BlockBuilding extends Skill {
         if (path == null) {
             path = new ArrayList<>();
         } else {
-            Bukkit.getLogger().info("Set path from straight line");
+            //Bukkit.getLogger().info("Set path from straight line");
             path = Pathing.widenStraightPath(path, 1);
             path = Pathing.cleanUpPath(path);
             return true;
@@ -96,7 +95,7 @@ public class BlockBuilding extends Skill {
             for (Block b : playerLedges) {
                 startBlock = Pathing.findLocationForPathBuildingUp(b.getLocation(), zombie);
                 if (startBlock != null) {
-                    Bukkit.getLogger().info("Set path from BELOW to ABOVE angles");
+                    //Bukkit.getLogger().info("Set path from BELOW to ABOVE angles");
                     endBlock = b;
                     break;
                 }
@@ -124,7 +123,7 @@ public class BlockBuilding extends Skill {
             }
         }
 
-        Bukkit.getLogger().warning("Not a single algorithm found a way to the player");
+        //Bukkit.getLogger().warning("Not a single algorithm found a way to the player");
         return false;
     }
 

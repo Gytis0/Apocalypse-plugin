@@ -66,13 +66,13 @@ public class Builder extends Regular {
             targetReachabilityDetection.action();
 
             if (targetReachabilityDetection.getIsTargetReachable()) {
-                Bukkit.getLogger().info("Player IS reachable.");
+                //Bukkit.getLogger().info("Player IS reachable.");
                 playerIsReachable = true;
                 return;
             }
         } else return;
 
-        Bukkit.getLogger().info("Player IS NOT reachable");
+        //Bukkit.getLogger().info("Player IS NOT reachable");
         playerIsReachable = false;
 
         Queue<Goal> fails = goalManager.getMostRecentFails();
@@ -90,7 +90,7 @@ public class Builder extends Regular {
             }
         }
 
-        Bukkit.getLogger().info("Current level / index / cycle: " + pathLevel + " / " + pathIndex + " / " + pathCycle);
+        //Bukkit.getLogger().info("Current level / index / cycle: " + pathLevel + " / " + pathIndex + " / " + pathCycle);
 
         if (pathIndex == 1) {
             goalManager.addGoal(new GoalReachTarget(blockBuilding.setPathToTargetLedge, zombie, currentTarget, pathLevel, pathIndex, PathType.NEAREST_LEDGE));

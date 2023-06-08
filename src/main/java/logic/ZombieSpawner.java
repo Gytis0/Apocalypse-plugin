@@ -102,7 +102,7 @@ public class ZombieSpawner {
 
                 randomSquadIndex = rand.nextInt(0, availableSquads.size());
                 squadToSpawn = availableSquads.get(randomSquadIndex);
-                Bukkit.getLogger().info(" ### Spawning \"" + squadToSpawn.getSquadName() + "\" squad. ### ");
+                //Bukkit.getLogger().info(" ### Spawning \"" + squadToSpawn.getSquadName() + "\" squad. ### ");
                 Set<ZombieTypes> zombies = squadToSpawn.getSquadContent().keySet();
 
                 for (ZombieTypes zombieType : zombies) {

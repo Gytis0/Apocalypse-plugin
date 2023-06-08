@@ -66,10 +66,10 @@ public class Regular implements Listener {
     protected void equip(int hotkeySlot) {
         if (hotkeySlot <= inventory.size() - 1) {
             zombie.getEquipment().setItemInMainHand(inventory.get(hotkeySlot));
-            Bukkit.getLogger().info("Equipped: " + inventory.get(hotkeySlot));
+            //Bukkit.getLogger().info("Equipped: " + inventory.get(hotkeySlot));
         } else {
             zombie.clearActiveItem();
-            Bukkit.getLogger().info("Equipping empty hand.");
+            //Bukkit.getLogger().info("Equipping empty hand.");
         }
     }
 
@@ -118,7 +118,7 @@ public class Regular implements Listener {
             currentTarget = zombie.getTarget();
             return true;
         } else {
-            Bukkit.getLogger().info("Idling, because there are not targets to KILL");
+            //Bukkit.getLogger().info("Idling, because there are not targets to KILL");
             return false;
         }
     }

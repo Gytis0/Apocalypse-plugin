@@ -1,33 +1,33 @@
 {
   "maxLevel": {
-    "base": 5.0,
+    "base": 1.0,
     "scale": 1.0,
-    "linear": 0.0
+    "linear": 1.0
   },
   "levelFocus": {
-    "base": 5.0,
+    "base": 0.3,
     "scale": 1.0,
-    "linear": 0.0
+    "linear": 0.05
   },
   "falloff": {
-    "base": 5.0,
+    "base": 1.0,
     "scale": 1.0,
     "linear": 0.0
   },
   "spacing": {
-    "base": 5.0,
+    "base": 10.0,
     "scale": 1.0,
     "linear": 0.0
   },
   "size": {
-    "base": 5.0,
+    "base": 8.0,
     "scale": 1.0,
-    "linear": 0.0
+    "linear": 0.5
   },
   "rate": {
-    "base": 5.0,
+    "base": 90.0,
     "scale": 1.0,
-    "linear": 0.0
+    "linear": -2.0
   },
   "width": {
     "base": 5.0,
@@ -35,8 +35,8 @@
     "linear": 0.0
   },
   "range": {
-    "base": 5.0,
+    "base": 32.0,
     "scale": 1.0,
-    "linear": 0.0
+    "linear": -1.0
   }
 }

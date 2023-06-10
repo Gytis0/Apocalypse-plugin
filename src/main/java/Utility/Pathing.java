@@ -46,6 +46,10 @@ public class Pathing {
         return block;
     }
 
+    public static Block findTopBlockFromY(Location location) {
+        return findTopBlockFromY((int) location.getX(), (int) location.getY(), (int) location.getZ());
+    }
+
     public static Block findBotBlockFromY(int x, int y, int z) {
         Block block = world.getBlockAt(x, y, z);
 

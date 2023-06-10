@@ -3,6 +3,7 @@ package logic;
 import Enums.HordeSpawningSettings;
 import Enums.ZombieTypes;
 import Model.Squad;
+import Utility.Pathing;
 import Utility.RepeatableTask;
 import ZombieTypes.Builder;
 import ZombieTypes.Miner;
@@ -186,7 +187,9 @@ public class ZombieSpawner {
     }
 
     Location spaceOutLocation(Location loc, float spacing) {
-        return new Location(thisWorld, loc.getX() + rand.nextFloat(spacing) - spacing / 2, loc.getY(), loc.getZ() + rand.nextFloat(spacing) - spacing / 2);
+        Location result = new Location(thisWorld, loc.getX() + rand.nextFloat(spacing) - spacing / 2, loc.getY(), loc.getZ() + rand.nextFloat(spacing) - spacing / 2);
+        result = Pathing.findTopBlockFromY(result).getLocation().add(0, 1, 0);
+        return result;
     }
 
     private List<Squad> getAvailableSquads(float weightRequirement, float levelRequirement) {

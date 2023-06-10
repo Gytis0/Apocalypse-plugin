@@ -4,6 +4,7 @@ import Enums.HordeSpawningSettings;
 import Enums.LevelSettings;
 import Enums.ZombieTypes;
 import Model.DifficultySetting;
+import Utility.Utils;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 
@@ -139,6 +140,7 @@ public class Difficulty {
 
         int maxLevel = (int) getCurrentSetting("maxLevel");
         float focus = getCurrentSetting("levelFocus");
+        focus = Utils.clamp(focus, 0, 1);
         int width = (int) getCurrentSetting("width");
         float falloff = getCurrentSetting("falloff");
 

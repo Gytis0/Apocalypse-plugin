@@ -115,6 +115,12 @@ public class BlockMining extends Skill {
                 possibleBlocks.add(new BlockFound(tempBlock, d.getOppositeFace()));
         }
 
+        if (possibleBlocks.isEmpty()) {
+            Bukkit.getLogger().info("Couldn't find blocks around");
+            Bukkit.getLogger().info(pivotBlock.getLocation().toVector().toString());
+            return currentPath;
+        }
+
         BlockFound closestBlock = Utils.findClosestBlockFoundToTarget(possibleBlocks, target);
 
         return mineUp(closestBlock);
@@ -285,8 +291,6 @@ public class BlockMining extends Skill {
     @Override
     public boolean trigger() {
         if (!enabled) return false;
-
-        zombie.setAI(!breaking);
 
         return blocksToBreak.size() > 0;
     }

@@ -24,7 +24,7 @@ public class Miner extends Regular {
     BlockMining blockMining;
 
     // AI
-    int pathIndex = 1, maxIndex = 3;
+    int pathIndex = 1, maxIndex = 2;
     int pathLevel = 1, maxLevel = 3;
     int pathCycle = 0;
 
@@ -57,12 +57,34 @@ public class Miner extends Regular {
             return;
         }
 
+        // If the target is reachable, do not bother with the mining logic
+        if (!blockMining.isBreaking() && targetReachabilityDetection.trigger() && cycle > 5) {
+            targetReachabilityDetection.action();
+
+            if (targetReachabilityDetection.getIsTargetReachable()) {
+                //Bukkit.getLogger().info("Player IS reachable.");
+                playerIsReachable = true;
+                goalManager.emptyGoals();
+                blockMining.disable();
+                blockMining.enable();
+                return;
+            }
+        } else return;
+
+        //Bukkit.getLogger().info("Player IS NOT reachable");
+        playerIsReachable = false;
+
         // If there are goals to do, do them first
         if (!goalManager.areGoalsEmpty()) {
             Object obj = goalManager.doGoals();
             if (obj instanceof Block) {
                 path.add(((Block) obj).getRelative(BlockFace.DOWN));
                 movedToFront = false;
+            } else if (obj instanceof ArrayList<?>) {
+                // Broadcast this path
+                Bukkit.getLogger().info("Got a path from mining skill.");
+                path.clear();
+                resetCycles();
             }
             return;
         }
@@ -74,20 +96,6 @@ public class Miner extends Regular {
             return;
         }
 
-        // If the target is reachable, do not bother with the mining logic
-        if (!blockMining.isBreaking() && targetReachabilityDetection.trigger() && cycle > 5) {
-            targetReachabilityDetection.action();
-
-            if (targetReachabilityDetection.getIsTargetReachable()) {
-                //Bukkit.getLogger().info("Player IS reachable.");
-                playerIsReachable = true;
-                return;
-            }
-        } else return;
-
-        //Bukkit.getLogger().info("Player IS NOT reachable");
-        playerIsReachable = false;
-
         Queue<Goal> fails = goalManager.getMostRecentFails();
 
         for (Goal g : fails) {
@@ -96,28 +104,29 @@ public class Miner extends Regular {
 
         //Bukkit.getLogger().info("Current level / index / cycle: " + pathLevel + " / " + pathIndex + " / " + pathCycle);
         if (!path.isEmpty() && !movedToFront) {
+            Bukkit.getLogger().info("Moving to: " + path.get(path.size() - 1).getLocation().toVector().toString());
             goalManager.addGoal(new GoalMoveTo(zombie, path.get(path.size() - 1).getLocation()));
             goalManager.addGoal(new GoalStandStill(zombie));
             movedToFront = true;
-        } else if (pathIndex == 1 && goalManager.areGoalsEmpty()) {
+        } else if (pathIndex == 99 && goalManager.areGoalsEmpty()) {
             goalManager.addGoal(new GoalReachTarget(blockMining.searchForFirstObstacle, zombie, currentTarget, pathLevel, pathIndex, PathType.FIRST_OBSTACLE));
             goalManager.addGoal(new GoalMoveFree(zombie));
-            //Bukkit.getLogger().info("Added firstObstacle goal");
-        } else if (pathIndex == 2 && goalManager.areGoalsEmpty()) {
+            Bukkit.getLogger().info("Added firstObstacle goal");
+        } else if (pathIndex == 1 && goalManager.areGoalsEmpty()) {
             if (isTargetRelativelyTheSameY(zombie, currentTarget)) {
-                //Bukkit.getLogger().info("Added straightLine goal");
+                Bukkit.getLogger().info("Added straightLine goal");
                 goalManager.addGoal(new GoalReachTarget(blockMining.searchForStraightPath, zombie, currentTarget, pathLevel, pathIndex, PathType.STRAIGHT_LINE));
                 goalManager.addGoal(new GoalMoveFree(zombie));
             } else increaseIndex();
-        } else if (pathIndex == 3 && goalManager.areGoalsEmpty()) {
+        } else if (pathIndex == 2 && goalManager.areGoalsEmpty()) {
             if (currentTarget.getLocation().getY() > zombie.getLocation().getY()) {
                 goalManager.addGoal(new GoalReachTarget(blockMining.carveUp, zombie, currentTarget, pathLevel, pathIndex, PathType.RAYS_UP));
                 goalManager.addGoal(new GoalMoveFree(zombie));
-                //Bukkit.getLogger().info("Added raysUp goal");
+                Bukkit.getLogger().info("Added carveUp goal");
             } else {
                 goalManager.addGoal(new GoalReachTarget(blockMining.carveDown, zombie, currentTarget, pathLevel, pathIndex, PathType.RAYS_DOWN));
                 goalManager.addGoal(new GoalMoveFree(zombie));
-                //Bukkit.getLogger().info("Added raysDown goal");
+                Bukkit.getLogger().info("Added carveDown goal");
             }
         }
     }
@@ -141,6 +150,11 @@ public class Miner extends Regular {
         pathLevel = 1;
         pathIndex = 1;
         pathCycle++;
+    }
+
+    protected void resetCycles() {
+        pathIndex = pathLevel = 1;
+        pathCycle = 0;
     }
 
     // Later change this. Make it to see if the angle between them is steep or not.

@@ -38,20 +38,21 @@ public class GoalMoveTo extends Goal {
 
     @Override
     public void run() {
+        Bukkit.getLogger().info("Moving goal in action...");
         if (!Pathing.isLocationReachable(entity, locationGoal)) {
-            //Bukkit.getLogger().warning("Location is not reachable.");
+            Bukkit.getLogger().warning("Location is not reachable.");
             status = StatusAnswer.FAILED;
             return;
         }
         Block locationBlock = locationGoal.getBlock();
         Block entityBlock = Pathing.findEntityFloorBlock(entity);
 
-        Bukkit.getLogger().info("MOVING to " + locationGoal);
-        Bukkit.getLogger().info("entity distance " + (entity.getLocation().distance(locationGoal)));
-        Bukkit.getLogger().info("block distance " + (entityBlock.getLocation().distance(locationBlock.getLocation())));
+        //Bukkit.getLogger().info("MOVING to " + locationGoal);
+        //Bukkit.getLogger().info("entity distance " + (entity.getLocation().distance(locationGoal)));
+        //Bukkit.getLogger().info("block distance " + (entityBlock.getLocation().distance(locationBlock.getLocation())));
 
-        Bukkit.getLogger().info("entity block " + entityBlock.getLocation());
-        Bukkit.getLogger().info("location block " + locationBlock.getLocation());
+        //Bukkit.getLogger().info("entity block " + entityBlock.getLocation());
+        //Bukkit.getLogger().info("location block " + locationBlock.getLocation());
 
         if (entityBlock.equals(locationBlock)) status = StatusAnswer.SUCCESS;
         else {

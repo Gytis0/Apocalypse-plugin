@@ -31,32 +31,6 @@ public class Utils {
         }
     }
 
-    public static Vector fixateVector(Vector vector) {
-        if (vector.getX() >= 0.5) {
-            vector.setX(1);
-            vector.setZ(0);
-            return vector;
-        } else if (vector.getX() <= -0.5) {
-            vector.setX(-1);
-            vector.setZ(0);
-            return vector;
-        }
-
-        if (vector.getZ() >= 0.5) {
-            vector.setZ(1);
-            vector.setX(0);
-            return vector;
-        } else if (vector.getZ() <= -0.5) {
-            vector.setZ(-1);
-            vector.setX(0);
-            return vector;
-        }
-
-        Bukkit.getLogger().warning("fixateVector() couldn't fixate a vector: " + vector);
-        Bukkit.getLogger().warning("this could cause some issues in finding the right blocks to mine");
-        return vector;
-    }
-
     public static void despawnAllZombies() {
         List<LivingEntity> allEntities = Bukkit.getServer().getWorld("world").getLivingEntities();
 

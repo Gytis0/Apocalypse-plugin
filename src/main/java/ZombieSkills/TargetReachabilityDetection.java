@@ -54,6 +54,7 @@ public class TargetReachabilityDetection implements ISkill {
         }
         double distance = closestLocation.distance(target.getLocation());
         Bukkit.getLogger().info("Distance to target: " + distance);
+        Bukkit.getLogger().info("Closest location: " + closestLocation.toVector().toString());
         isTargetReachable = distance <= 1.0;
     }
 

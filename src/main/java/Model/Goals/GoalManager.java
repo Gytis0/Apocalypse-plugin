@@ -1,6 +1,7 @@
 package Model.Goals;
 
 import Model.StatusAnswer;
+import org.bukkit.Bukkit;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -22,11 +23,11 @@ public class GoalManager {
             goal.run();
 
             if (goal.status == StatusAnswer.SUCCESS) {
-                //Bukkit.getLogger().info("Removed a goal, because it was done.");
+                Bukkit.getLogger().info("Goal was done.");
                 goals.poll();
                 return goal.getAnswer();
             } else if (goal.status == StatusAnswer.RUNNING) {
-                //Bukkit.getLogger().info("Goal is still running...");
+                Bukkit.getLogger().info("Goal is still running...");
             } else if (goal.isMandatory() && (goal.status == StatusAnswer.FAILED || goal.status == StatusAnswer.TIMED_OUT)) {
                 //Bukkit.getLogger().info("Clearing the queue, because one of the mandatory goals failed.");
                 goals.clear();

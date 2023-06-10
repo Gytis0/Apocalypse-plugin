@@ -491,6 +491,7 @@ public class Pathing {
 
         if (closestLocation == null) return false;
 
+        Bukkit.getLogger().info("Closest location: " + closestLocation.toVector().toString());
         return closestLocation.distance(target) <= 1;
     }
 
